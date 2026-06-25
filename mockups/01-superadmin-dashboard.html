@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XLegal · Super Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--navy:#0d0d1a;--gold:#c9a84c;--gold2:#e8c97a;--bg:#f4f3f0;--card:#ffffff;--border:#e8e6e1;--text:#1a1814;--muted:#8a8680}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
+
+/* Sidebar */
+.sidebar{width:220px;background:var(--navy);display:flex;flex-direction:column;padding:0;flex-shrink:0;position:relative;overflow:hidden}
+.sidebar::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:var(--gold);opacity:.04}
+.sidebar-logo{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,.06)}
+.logo-mark{display:flex;align-items:center;gap:10px}
+.logo-icon{width:34px;height:34px;background:var(--gold);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:var(--navy)}
+.logo-text{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;color:#fff;letter-spacing:-.3px}
+.logo-sub{font-size:9px;color:rgba(255,255,255,.3);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px}
+.nav{padding:16px 12px;flex:1}
+.nav-group{margin-bottom:24px}
+.nav-group-label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.25);padding:0 8px;margin-bottom:8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;color:rgba(255,255,255,.5);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:2px;text-decoration:none}
+.nav-item:hover,.nav-item.active{background:rgba(255,255,255,.08);color:#fff}
+.nav-item.active{background:var(--gold);color:var(--navy);font-weight:600}
+.nav-icon{width:16px;height:16px;opacity:.7;flex-shrink:0}
+.nav-item.active .nav-icon{opacity:1}
+.sidebar-footer{padding:16px 20px;border-top:1px solid rgba(255,255,255,.06)}
+.admin-chip{display:flex;align-items:center;gap:8px}
+.admin-av{width:30px;height:30px;border-radius:8px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--navy);font-family:'Syne',sans-serif}
+.admin-name{font-size:11px;font-weight:600;color:rgba(255,255,255,.8)}
+.admin-role{font-size:9px;color:var(--gold);text-transform:uppercase;letter-spacing:.8px}
+
+/* Main */
+.main{flex:1;overflow:auto;display:flex;flex-direction:column}
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-left h1{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;color:var(--text)}
+.topbar-left p{font-size:12px;color:var(--muted);margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.btn-outline{background:#fff;border:1.5px solid var(--border);color:var(--text)}
+.btn-gold{background:var(--gold);color:var(--navy)}
+.badge-notif{background:#ef4444;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700}
+
+.content{padding:24px 28px;flex:1}
+
+/* Stats grid */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:#fff;border-radius:16px;padding:20px;border:1px solid var(--border);position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;opacity:.06}
+.stat-card.gold::after{background:var(--gold)}
+.stat-card.blue::after{background:#3b82f6}
+.stat-card.green::after{background:#10b981}
+.stat-card.red::after{background:#ef4444}
+.stat-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;font-size:16px}
+.icon-gold{background:#fef3c7}.icon-blue{background:#dbeafe}.icon-green{background:#d1fae5}.icon-red{background:#fee2e2}
+.stat-val{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--text);line-height:1}
+.stat-label{font-size:12px;color:var(--muted);margin-top:6px}
+.stat-change{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;margin-top:8px}
+.up{background:#d1fae5;color:#059669}.down{background:#fee2e2;color:#dc2626}
+
+/* Main grid */
+.main-grid{display:grid;grid-template-columns:1fr 340px;gap:20px}
+.card{background:#fff;border-radius:16px;border:1px solid var(--border);overflow:hidden}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:14px}
+.card-body{padding:20px}
+
+/* MRR Chart */
+.chart-area{height:160px;display:flex;align-items:flex-end;gap:6px;padding:0 4px}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+.bar{width:100%;border-radius:6px 6px 0 0;transition:all .3s;cursor:pointer;position:relative}
+.bar.active{background:var(--gold)}.bar.past{background:#e8e6e1}.bar.current{background:var(--navy)}
+.bar-label{font-size:9px;color:var(--muted);text-align:center}
+.bar-val{font-size:9px;font-weight:700;color:var(--muted);text-align:center}
+
+/* Tenants list */
+.tenant-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.tenant-row:last-child{border-bottom:none}
+.tenant-av{width:36px;height:36px;border-radius:10px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:var(--gold);flex-shrink:0}
+.tenant-name{font-weight:600;font-size:13px}
+.tenant-plan{font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;display:inline-block}
+.plan-m{background:#fef3c7;color:#92400e}.plan-s{background:#dbeafe;color:#1e40af}.plan-solo{background:#f3f4f6;color:#374151}.plan-l{background:#ede9fe;color:#5b21b6}
+.tenant-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot-green{background:#10b981}.dot-red{background:#ef4444}.dot-yellow{background:#f59e0b}.dot-gray{background:#d1d5db}
+
+/* Right panel */
+.right-col{display:flex;flex-direction:column;gap:20px}
+.alert-row{display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:12px;margin-bottom:8px}
+.alert-row:last-child{margin-bottom:0}
+.alert-icon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px}
+.alert-text{font-size:12px;font-weight:500;line-height:1.4}
+.alert-sub{font-size:10px;margin-top:2px;opacity:.6}
+.alert-red{background:#fee2e2}.alert-yellow{background:#fef3c7}.alert-blue{background:#dbeafe}
+
+/* Revenue row */
+.rev-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.rev-row:last-child{border-bottom:none}
+.rev-label{font-size:12px;color:var(--muted)}
+.rev-val{font-family:'Syne',sans-serif;font-weight:700;font-size:14px}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon">X</div>
+      <div><div class="logo-text">XLegal</div><div class="logo-sub">Super Admin</div></div>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nav-group">
+      <div class="nav-group-label">Principal</div>
+      <a class="nav-item active" href="#">📊 Dashboard</a>
+      <a class="nav-item" href="#">🏢 Clientes</a>
+      <a class="nav-item" href="#">💳 Facturación</a>
+      <a class="nav-item" href="#">👥 Usuarios</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Marketing</div>
+      <a class="nav-item" href="#">📣 Publicidad</a>
+      <a class="nav-item" href="#">📈 Analytics</a>
+      <a class="nav-item" href="#">📱 Redes Sociales</a>
+      <a class="nav-item" href="#">✉️ Automation</a>
+      <a class="nav-item" href="#">🧠 Business Intel.</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Sistema</div>
+      <a class="nav-item" href="#">📢 Comunicados</a>
+      <a class="nav-item" href="#">🔧 Herramientas</a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="admin-chip">
+      <div class="admin-av">X</div>
+      <div><div class="admin-name">Xabier Carrillo</div><div class="admin-role">Super Admin</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>Dashboard General</h1>
+      <p>Martes, 10 de marzo 2026 · Paraguay</p>
+    </div>
+    <div class="topbar-right">
+      <button class="topbar-btn btn-outline">📤 Exportar CSV</button>
+      <button class="topbar-btn btn-gold">+ Nuevo Cliente</button>
+      <div style="position:relative;margin-left:4px">
+        <div style="width:36px;height:36px;background:#f4f3f0;border-radius:10px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px">🔔</div>
+        <div class="badge-notif" style="position:absolute;top:-4px;right:-4px">3</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card gold">
+        <div class="stat-icon icon-gold">💰</div>
+        <div class="stat-val">₲ 18.2M</div>
+        <div class="stat-label">MRR — Ingreso Mensual</div>
+        <div class="stat-change up">↑ +12.4% vs Feb</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-icon icon-blue">🏢</div>
+        <div class="stat-val">47</div>
+        <div class="stat-label">Clientes Activos</div>
+        <div class="stat-change up">↑ +5 este mes</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon icon-green">👤</div>
+        <div class="stat-val">184</div>
+        <div class="stat-label">Usuarios Totales</div>
+        <div class="stat-change up">↑ +17 este mes</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon icon-red">⚠️</div>
+        <div class="stat-val">4</div>
+        <div class="stat-label">Pagos Vencidos</div>
+        <div class="stat-change down">₲ 3.2M en riesgo</div>
+      </div>
+    </div>
+
+    <!-- Charts + List -->
+    <div class="main-grid">
+      <!-- Left: MRR Chart + Clients -->
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📈 Evolución MRR — 2026</span>
+            <span style="font-size:11px;color:var(--muted);font-weight:600">GUARANÍES</span>
+          </div>
+          <div class="card-body">
+            <div class="chart-area">
+              <div class="bar-wrap"><div class="bar past" style="height:60%"></div><div class="bar-label">Sep</div></div>
+              <div class="bar-wrap"><div class="bar past" style="height:68%"></div><div class="bar-label">Oct</div></div>
+              <div class="bar-wrap"><div class="bar past" style="height:74%"></div><div class="bar-label">Nov</div></div>
+              <div class="bar-wrap"><div class="bar past" style="height:80%"></div><div class="bar-label">Dic</div></div>
+              <div class="bar-wrap"><div class="bar active" style="height:88%"></div><div class="bar-label">Ene</div></div>
+              <div class="bar-wrap"><div class="bar current" style="height:100%"></div><div class="bar-label">Feb</div></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+              <div><div style="font-size:11px;color:var(--muted)">ARR Proyectado</div><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px">₲ 218.4M</div></div>
+              <div style="text-align:right"><div style="font-size:11px;color:var(--muted)">Churn Rate</div><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px">1.8%</div></div>
+              <div style="text-align:right"><div style="font-size:11px;color:var(--muted)">LTV promedio</div><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px">₲ 4.1M</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">🏢 Clientes Recientes</span>
+            <span style="font-size:11px;padding:4px 10px;background:var(--navy);color:var(--gold);border-radius:8px;font-weight:600">Ver todos →</span>
+          </div>
+          <div class="card-body" style="padding:20px 20px 12px">
+            <div class="tenant-row">
+              <div class="tenant-av">GM</div>
+              <div style="flex:1">
+                <div class="tenant-name">González & Morales Abogados</div>
+                <div class="tenant-meta">Asunción · 8 usuarios · <span class="tenant-plan plan-m">Bufete M</span></div>
+              </div>
+              <div class="status-dot dot-green"></div>
+            </div>
+            <div class="tenant-row">
+              <div class="tenant-av">EP</div>
+              <div style="flex:1">
+                <div class="tenant-name">Estudio Penayo Hnos.</div>
+                <div class="tenant-meta">Encarnación · 3 usuarios · <span class="tenant-plan plan-s">Bufete S</span></div>
+              </div>
+              <div class="status-dot dot-green"></div>
+            </div>
+            <div class="tenant-row">
+              <div class="tenant-av">AV</div>
+              <div style="flex:1">
+                <div class="tenant-name">Abog. Ana Villalba</div>
+                <div class="tenant-meta">CDE · 1 usuario · <span class="tenant-plan plan-solo">Solo</span></div>
+              </div>
+              <div class="status-dot dot-yellow"></div>
+            </div>
+            <div class="tenant-row">
+              <div class="tenant-av">RL</div>
+              <div style="flex:1">
+                <div class="tenant-name">Romero & López Consulting</div>
+                <div class="tenant-meta">Asunción · 12 usuarios · <span class="tenant-plan plan-l">Bufete L</span></div>
+              </div>
+              <div class="status-dot dot-red"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right col -->
+      <div class="right-col">
+        <div class="card">
+          <div class="card-header"><span class="card-title">⚠️ Alertas del Sistema</span></div>
+          <div class="card-body" style="padding:16px">
+            <div class="alert-row alert-red">
+              <div class="alert-icon">💳</div>
+              <div><div class="alert-text">4 pagos vencidos — ₲ 3.2M</div><div class="alert-sub">Requieren acción inmediata</div></div>
+            </div>
+            <div class="alert-row alert-yellow">
+              <div class="alert-icon">⏳</div>
+              <div><div class="alert-text">6 trials vencen en 3 días</div><div class="alert-sub">Contactar para conversión</div></div>
+            </div>
+            <div class="alert-row alert-blue">
+              <div class="alert-icon">🔄</div>
+              <div><div class="alert-text">Backup automático OK</div><div class="alert-sub">Hoy 03:00 AM · 47 schemas</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">💵 Ingresos del Mes</span></div>
+          <div class="card-body">
+            <div class="rev-row"><span class="rev-label">Plan Solo (×12)</span><span class="rev-val">₲ 900K</span></div>
+            <div class="rev-row"><span class="rev-label">Bufete S (×18)</span><span class="rev-val">₲ 5.4M</span></div>
+            <div class="rev-row"><span class="rev-label">Bufete M (×11)</span><span class="rev-val">₲ 5.5M</span></div>
+            <div class="rev-row"><span class="rev-label">Bufete L (×6)</span><span class="rev-val">₲ 6.4M</span></div>
+            <div class="rev-row" style="border-top:2px solid var(--navy);padding-top:12px;margin-top:4px">
+              <span style="font-weight:700;font-size:13px">TOTAL MRR</span>
+              <span style="font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--navy)">₲ 18.2M</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">📦 Planes activos</span></div>
+          <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span class="tenant-plan plan-solo">Solo</span><span style="font-weight:700">12</span></div><div style="height:6px;background:#f3f4f6;border-radius:3px"><div style="height:6px;background:#9ca3af;border-radius:3px;width:25%"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span class="tenant-plan plan-s">Bufete S</span><span style="font-weight:700">18</span></div><div style="height:6px;background:#f3f4f6;border-radius:3px"><div style="height:6px;background:#3b82f6;border-radius:3px;width:38%"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span class="tenant-plan plan-m">Bufete M</span><span style="font-weight:700">11</span></div><div style="height:6px;background:#f3f4f6;border-radius:3px"><div style="height:6px;background:#d97706;border-radius:3px;width:23%"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span class="tenant-plan plan-l">Bufete L</span><span style="font-weight:700">6</span></div><div style="height:6px;background:#f3f4f6;border-radius:3px"><div style="height:6px;background:#7c3aed;border-radius:3px;width:13%"></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

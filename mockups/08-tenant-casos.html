@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XLegal · Gestión de Casos</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--navy:#0d0d1a;--gold:#c9a84c;--bg:#f4f6f9;--card:#fff;--border:#e2e8f0;--text:#1a202c;--muted:#718096}
+body{font-family:'Inter',sans-serif;background:var(--bg);min-height:100vh;display:flex}
+
+.sidebar{width:230px;background:var(--navy);display:flex;flex-direction:column;flex-shrink:0;padding:0}
+.sidebar-top{padding:18px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
+.firm-logo{display:flex;align-items:center;gap:10px}
+.fl-mark{width:32px;height:32px;background:var(--gold);border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;color:var(--navy);font-size:14px}
+.fl-name{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#fff}
+.fl-plan{font-size:10px;color:rgba(255,255,255,.3)}
+.nav{padding:14px 10px;flex:1}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;color:rgba(255,255,255,.4);font-size:12.5px;font-weight:500;cursor:pointer;margin-bottom:1px;transition:.15s}
+.nav-item.active{background:rgba(201,168,76,.15);color:var(--gold);font-weight:600}
+.nav-item:hover{background:rgba(255,255,255,.05);color:rgba(255,255,255,.8)}
+.nav-badge{margin-left:auto;background:rgba(239,68,68,.8);color:#fff;border-radius:99px;font-size:9px;font-weight:800;padding:1px 6px;min-width:18px;text-align:center}
+
+/* Main */
+.main{flex:1;overflow:auto}
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;gap:12px}
+.page-title{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;flex:1}
+.btn{padding:8px 16px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:.15s;display:flex;align-items:center;gap:6px}
+.btn-outline{background:#fff;border:1.5px solid var(--border);color:var(--text)}
+.btn-primary{background:var(--navy);color:#fff}
+
+.content{padding:20px 24px}
+
+/* Stats */
+.stat-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.s{background:#fff;border-radius:12px;padding:14px 16px;border:1px solid var(--border);cursor:pointer;transition:.15s}
+.s:hover,.s.sel{border-color:var(--navy);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.s-v{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;line-height:1}
+.s-l{font-size:11px;color:var(--muted);margin-top:3px}
+.s-d{width:28px;height:4px;border-radius:2px;margin-bottom:8px}
+
+/* Kanban */
+.kanban{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.col{background:#f8fafc;border-radius:12px;border:1px solid var(--border);overflow:hidden;display:flex;flex-direction:column;max-height:calc(100vh - 260px)}
+.col-hdr{padding:12px 14px;border-bottom:1px solid var(--border);background:#fff;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.col-name{font-weight:700;font-size:12px;color:var(--text)}
+.col-count{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px}
+.col-body{padding:10px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:8px}
+
+/* Case cards */
+.cc{background:#fff;border-radius:10px;border:1px solid var(--border);padding:12px;cursor:pointer;transition:.15s;position:relative}
+.cc:hover{box-shadow:0 4px 12px rgba(0,0,0,.06);border-color:#c4c9d4;transform:translateY(-1px)}
+.cc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:8px}
+.cc-num{font-size:9px;font-weight:700;color:var(--muted);font-family:monospace}
+.cc-title{font-weight:600;font-size:12px;line-height:1.4;flex:1}
+.cc-matter{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;white-space:nowrap;display:inline-block;margin-bottom:6px}
+.m-civil{background:#eff6ff;color:#1d4ed8}.m-laboral{background:#fff7ed;color:#c2410c}.m-comercial{background:#f5f3ff;color:#6d28d9}.m-penal{background:#fff1f2;color:#be123c}.m-familia{background:#fdf4ff;color:#86198f}
+.cc-client{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px}
+.cc-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.cc-date{font-size:10px;color:var(--muted)}
+.cc-lawyer{width:22px;height:22px;border-radius:6px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:var(--gold);font-family:'Syne',sans-serif}
+.urgency-dot{position:absolute;top:8px;right:8px;width:7px;height:7px;border-radius:50%}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-top">
+    <div class="firm-logo">
+      <div class="fl-mark">GM</div>
+      <div><div class="fl-name">González & Morales</div><div class="fl-plan">Bufete M · Asunción</div></div>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item">📊 Dashboard</div>
+    <div class="nav-item active">⚖️ Casos<span class="nav-badge">28</span></div>
+    <div class="nav-item">👥 Clientes</div>
+    <div class="nav-item">📅 Audiencias</div>
+    <div class="nav-item">⏰ Plazos<span class="nav-badge">3</span></div>
+    <div class="nav-item">✅ Tareas</div>
+    <div class="nav-item">📄 Documentos</div>
+    <div class="nav-item">💳 Facturación</div>
+    <div class="nav-item">🤖 LEXI IA</div>
+    <div class="nav-item">📊 Reportes</div>
+  </nav>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <span class="page-title">⚖️ Casos</span>
+    <input placeholder="Buscar caso, cliente..." style="padding:8px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:12px;width:220px;outline:none;font-family:'Inter',sans-serif">
+    <button class="btn btn-outline">Filtros ▾</button>
+    <button class="btn btn-outline">📋 Lista</button>
+    <button class="btn btn-primary">+ Nuevo Caso</button>
+  </div>
+
+  <div class="content">
+    <!-- Stats bar -->
+    <div class="stat-bar">
+      <div class="s sel"><div class="s-d" style="background:#3b82f6"></div><div class="s-v">28</div><div class="s-l">Todos los casos</div></div>
+      <div class="s"><div class="s-d" style="background:#10b981"></div><div class="s-v">16</div><div class="s-l">Activos</div></div>
+      <div class="s"><div class="s-d" style="background:#f59e0b"></div><div class="s-v">6</div><div class="s-l">En juicio</div></div>
+      <div class="s"><div class="s-d" style="background:#8b5cf6"></div><div class="s-v">4</div><div class="s-l">Negociación</div></div>
+      <div class="s"><div class="s-d" style="background:#6b7280"></div><div class="s-v">2</div><div class="s-l">Cerrados</div></div>
+    </div>
+
+    <!-- Kanban -->
+    <div class="kanban">
+      <!-- Nuevo -->
+      <div class="col">
+        <div class="col-hdr">
+          <span class="col-name">🆕 Nuevo</span>
+          <span class="col-count" style="background:#eff6ff;color:#1d4ed8">3</span>
+        </div>
+        <div class="col-body">
+          <div class="cc">
+            <div class="cc-top"><span class="cc-num">#2025-012</span></div>
+            <div class="cc-title">Banco Nacional c/ Emprendimientos del Sur</div>
+            <div><span class="cc-matter m-comercial">Comercial</span></div>
+            <div class="cc-client">👤 Banco Nacional S.A.</div>
+            <div class="cc-footer"><span class="cc-date">Inicio: 5 Mar 2026</span><div class="cc-lawyer">JG</div></div>
+            <div class="urgency-dot" style="background:#10b981"></div>
+          </div>
+          <div class="cc">
+            <div class="cc-top"><span class="cc-num">#2025-013</span></div>
+            <div class="cc-title">Torres — Divorcio con régimen de visitas</div>
+            <div><span class="cc-matter m-familia">Familia</span></div>
+            <div class="cc-client">👤 Patricia Torres</div>
+            <div class="cc-footer"><span class="cc-date">Inicio: 8 Mar 2026</span><div class="cc-lawyer">ML</div></div>
+            <div class="urgency-dot" style="background:#10b981"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activo -->
+      <div class="col">
+        <div class="col-hdr">
+          <span class="col-name">✅ Activo</span>
+          <span class="col-count" style="background:#dcfce7;color:#16a34a">8</span>
+        </div>
+        <div class="col-body">
+          <div class="cc">
+            <div class="cc-top"><span class="cc-num">#2024-047</span></div>
+            <div class="cc-title">López c/ Constructora Itá S.A.</div>
+            <div><span class="cc-matter m-civil">Civil</span></div>
+            <div class="cc-client">👤 Roberto López</div>
+            <div class="cc-footer"><span class="cc-date">Aud: 14 Mar</span><div class="cc-lawyer">JG</div></div>
+            <div class="urgency-dot" style="background:#f59e0b"></div>
+          </div>
+          <div class="cc">
+            <div class="cc-top"><span class="cc-num">#2024-051</span></div>
+            <div class="cc-title">Fernández — Despido injustificado</div>
+            <div><span class="cc-matter m-laboral">Laboral</span></div>
+            <div class="cc-client">👤 María Fernández</div>
+            <div class="cc-footer"><span class="cc-date">Plazo: 12 Mar ⚠️</span><div class="cc-lawyer">JG</div></div>
+            <div class="urgency-dot" style="background:#ef4444"></div>
+          </div>
+          <div class="cc">
+            <div class="cc-top"><span class="cc-num">#2025-001</span></div>
+            <div class="cc-title">Gaona — Reclamación honorarios</div>
+            <div><span class="cc-matter m-civil">Civil</span></div>
+            <div class="cc-client">👤 Luis Gaona</div>
+            <div class="cc-footer"><span class="cc-date">Sin próx. fecha</span><div class="cc-lawyer">AM</div></div>
+            <div class="urgency-dot" style="background:#10b981"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Juicio -->
+      <div class="col">
+        <div class="col-hdr">
+          <span class="col-name">⚖️ En Juicio</span>
+          <span class="col-count" style="background:#fef3c7;color:#92400e">6</span>
+        </div>
+        <div class="col-body">
+          <div class="cc">
+            <div class="cc-top"><span class="cc-num">#2024-033</span></div>
+            <div class="cc-title">Importadora Sur c/ Banco Continental</div>
+            <div><span class="cc-matter m-comercial">Comercial</span></div>
+            <div class="cc-client">👤 Importadora Sur S.R.L.</div>
+            <div class="cc-footer"><span class="cc-date">Pruebas: 18 Mar</span><div class="cc-lawyer">JG</div></div>
+            <div class="urgency-dot" style="background:#f59e0b"></div>
+          </div>
+          <div class="cc">
+            <div class="cc-top"><span class="cc-num">#2024-038</span></div>
+            <div class="cc-title">Estado PY c/ Rodas — Contrabando</div>
+            <div><span class="cc-matter m-penal">Penal</span></div>
+            <div class="cc-client">👤 Héctor Rodas</div>
+            <div class="cc-footer"><span class="cc-date">Sentencia: 25 Mar</span><div class="cc-lawyer">ML</div></div>
+            <div class="urgency-dot" style="background:#3b82f6"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Negociación -->
+      <div class="col">
+        <div class="col-hdr">
+          <span class="col-name">🤝 Negociación</span>
+          <span class="col-count" style="background:#f5f3ff;color:#6d28d9">4</span>
+        </div>
+        <div class="col-body">
+          <div class="cc">
+            <div class="cc-top"><span class="cc-num">#2025-008</span></div>
+            <div class="cc-title">Rodríguez — Divorcio mutuo consentimiento</div>
+            <div><span class="cc-matter m-familia">Familia</span></div>
+            <div class="cc-client">👤 Carlos Rodríguez</div>
+            <div class="cc-footer"><span class="cc-date">Mediación: 15 Mar</span><div class="cc-lawyer">AM</div></div>
+            <div class="urgency-dot" style="background:#8b5cf6"></div>
+          </div>
+          <div class="cc">
+            <div class="cc-top"><span class="cc-num">#2025-010</span></div>
+            <div class="cc-title">Textil Asunción — Resolución contractual</div>
+            <div><span class="cc-matter m-comercial">Comercial</span></div>
+            <div class="cc-client">👤 Textil Asunción S.A.</div>
+            <div class="cc-footer"><span class="cc-date">Reunión: 20 Mar</span><div class="cc-lawyer">JG</div></div>
+            <div class="urgency-dot" style="background:#8b5cf6"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Apelación -->
+      <div class="col">
+        <div class="col-hdr">
+          <span class="col-name">📋 Apelación</span>
+          <span class="col-count" style="background:#f0fdf4;color:#16a34a">2</span>
+        </div>
+        <div class="col-body">
+          <div class="cc">
+            <div class="cc-top"><span class="cc-num">#2023-082</span></div>
+            <div class="cc-title">Pereira c/ Municipalidad de Asunción</div>
+            <div><span class="cc-matter m-civil">Civil</span></div>
+            <div class="cc-client">👤 Jorge Pereira</div>
+            <div class="cc-footer"><span class="cc-date">Resol: pendiente</span><div class="cc-lawyer">JG</div></div>
+            <div class="urgency-dot" style="background:#6b7280"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XLegal · Business Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--navy:#060612;--gold:#d4aa50;--bg:#06060e;--card:#0e0e1c;--border:#1e1e35;--text:#f0f0ff;--muted:#6b6b9a;--accent:#7c6ef5;--green:#34d399;--red:#f87171}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);min-height:100vh;display:flex;color:var(--text)}
+
+.sidebar{width:200px;background:var(--card);border-right:1px solid var(--border);padding:20px 12px;display:flex;flex-direction:column;flex-shrink:0}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--gold);padding:4px 8px 20px;border-bottom:1px solid var(--border);margin-bottom:20px}
+.nav-item{padding:9px 10px;border-radius:10px;color:rgba(255,255,255,.3);font-size:12.5px;cursor:pointer;margin-bottom:3px}
+.nav-item.active{background:rgba(124,110,245,.2);color:#a5b4fc;font-weight:600}
+.nav-item:hover{background:rgba(255,255,255,.04);color:rgba(255,255,255,.7)}
+
+.main{flex:1;overflow:auto}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+.page-title{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--gold)}
+.page-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.content{padding:24px 28px}
+
+/* Hero KPI row */
+.hero-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.hkpi{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;position:relative;overflow:hidden}
+.hkpi::after{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;opacity:.07}
+.hkpi.c1::after{background:#7c6ef5}.hkpi.c2::after{background:#34d399}.hkpi.c3::after{background:#f59e0b}.hkpi.c4::after{background:#f87171}
+.hkpi-val{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;line-height:1;margin-top:12px}
+.hkpi-label{font-size:12px;color:var(--muted);margin-top:6px}
+.hkpi-change{font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;margin-top:8px;display:inline-block}
+.up{background:rgba(52,211,153,.15);color:#34d399}.down{background:rgba(248,113,113,.15);color:#f87171}
+.hkpi-ico{font-size:22px}
+
+/* Section cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.card-hdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--text)}
+.card-body{padding:20px}
+
+/* Row metrics */
+.metric-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.metric-row:last-child{border-bottom:none}
+.metric-label{color:var(--muted)}
+.metric-val{font-weight:700;font-family:'Syne',sans-serif}
+
+/* Integration status */
+.integ-section{margin-bottom:20px}
+.integ-section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px}
+.integ-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.integ-chip{display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;transition:.15s;cursor:pointer}
+.integ-chip:hover{border-color:rgba(124,110,245,.4)}
+.integ-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot-green{background:#34d399;box-shadow:0 0 6px #34d399}.dot-gray{background:#374151}
+.integ-name{font-size:11px;font-weight:600;color:var(--text)}
+.integ-status{font-size:9px;color:var(--muted);margin-top:1px}
+.connect-btn{font-size:10px;font-weight:700;color:var(--accent);margin-left:auto;padding:3px 8px;border:1px solid rgba(124,110,245,.3);border-radius:5px;background:rgba(124,110,245,.08);cursor:pointer}
+
+/* BI tools */
+.bi-tool{display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:.2s}
+.bi-tool:hover{background:rgba(124,110,245,.07);border-color:rgba(124,110,245,.3)}
+.bi-logo{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.bi-name{font-weight:700;font-size:14px}
+.bi-desc{font-size:11px;color:var(--muted);margin-top:2px}
+.bi-arrow{margin-left:auto;color:var(--accent);font-size:18px}
+
+/* Funnel */
+.funnel-item{margin-bottom:10px}
+.funnel-bar{height:36px;border-radius:9px;display:flex;align-items:center;gap:10px;padding:0 14px;font-size:12px;font-weight:700;background:rgba(124,110,245,.2);color:#a5b4fc;position:relative;overflow:hidden}
+.funnel-fill{position:absolute;left:0;top:0;bottom:0;background:rgba(124,110,245,.4);border-radius:9px}
+.funnel-text{position:relative;z-index:1}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="logo">X Legal</div>
+  <div class="nav-item">📊 Dashboard</div>
+  <div class="nav-item">🏢 Clientes</div>
+  <div class="nav-item">💳 Facturación</div>
+  <div class="nav-item">📣 Publicidad</div>
+  <div class="nav-item">📈 Analytics</div>
+  <div class="nav-item">📱 Redes</div>
+  <div class="nav-item">✉️ Marketing</div>
+  <div class="nav-item active">🧠 Business Intel.</div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title">🧠 Business Intelligence</div>
+      <div class="page-sub">KPIs consolidados · SaaS · Marketing · Publicidad · Social</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button style="padding:8px 16px;background:rgba(124,110,245,.15);color:#a5b4fc;border:1px solid rgba(124,110,245,.3);border-radius:10px;font-size:12px;font-weight:600;cursor:pointer">📅 Marzo 2026</button>
+      <button style="padding:8px 16px;background:var(--gold);color:var(--navy);border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer">📤 Exportar Reporte</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Hero KPIs -->
+    <div class="hero-kpis">
+      <div class="hkpi c1"><div class="hkpi-ico">💰</div><div class="hkpi-val" style="color:#d4aa50">₲ 18.2M</div><div class="hkpi-label">MRR — Ingreso Mensual</div><div class="hkpi-change up">↑ +12.4%</div></div>
+      <div class="hkpi c2"><div class="hkpi-ico">🎯</div><div class="hkpi-val" style="color:#34d399">₲ 269K</div><div class="hkpi-label">CAC — Costo por cliente</div><div class="hkpi-change up">↓ -8% optimizado</div></div>
+      <div class="hkpi c3"><div class="hkpi-ico">📊</div><div class="hkpi-val" style="color:#f59e0b">142</div><div class="hkpi-label">Leads generados / mes</div><div class="hkpi-change up">↑ +18</div></div>
+      <div class="hkpi c4"><div class="hkpi-ico">📈</div><div class="hkpi-val" style="color:#a5b4fc">312%</div><div class="hkpi-label">ROI Publicidad</div><div class="hkpi-change up">↑ +24pp</div></div>
+    </div>
+
+    <!-- 3 col -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
+      <!-- SaaS -->
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">💼 SaaS Metrics</span></div>
+        <div class="card-body">
+          <div class="metric-row"><span class="metric-label">MRR</span><span class="metric-val" style="color:#d4aa50">₲ 18.2M</span></div>
+          <div class="metric-row"><span class="metric-label">ARR Proyectado</span><span class="metric-val">₲ 218.4M</span></div>
+          <div class="metric-row"><span class="metric-label">Clientes activos</span><span class="metric-val">47</span></div>
+          <div class="metric-row"><span class="metric-label">Churn rate</span><span class="metric-val" style="color:#34d399">1.8%</span></div>
+          <div class="metric-row"><span class="metric-label">NPS</span><span class="metric-val" style="color:#34d399">72</span></div>
+          <div class="metric-row"><span class="metric-label">LTV promedio</span><span class="metric-val">₲ 4.1M</span></div>
+        </div>
+      </div>
+      <!-- Marketing -->
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">🎯 Marketing Metrics</span></div>
+        <div class="card-body">
+          <div class="metric-row"><span class="metric-label">CAC</span><span class="metric-val" style="color:#34d399">₲ 269K</span></div>
+          <div class="metric-row"><span class="metric-label">LTV estimado</span><span class="metric-val">₲ 4.1M</span></div>
+          <div class="metric-row"><span class="metric-label">LTV/CAC ratio</span><span class="metric-val" style="color:#a5b4fc">15.2x</span></div>
+          <div class="metric-row"><span class="metric-label">Conversión web</span><span class="metric-val">3.4%</span></div>
+          <div class="metric-row"><span class="metric-label">Tráfico orgánico</span><span class="metric-val">35%</span></div>
+          <div class="metric-row"><span class="metric-label">Email open rate</span><span class="metric-val">28.4%</span></div>
+        </div>
+      </div>
+      <!-- Social & Ads -->
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">📱 Social & Ads</span></div>
+        <div class="card-body">
+          <div class="metric-row"><span class="metric-label">Seguidores totales</span><span class="metric-val">12,840</span></div>
+          <div class="metric-row"><span class="metric-label">Crecimiento 30d</span><span class="metric-val" style="color:#34d399">+486</span></div>
+          <div class="metric-row"><span class="metric-label">Engagement prom.</span><span class="metric-val">4.2%</span></div>
+          <div class="metric-row"><span class="metric-label">Inversión ads/mes</span><span class="metric-val" style="color:#f59e0b">₲ 4.85M</span></div>
+          <div class="metric-row"><span class="metric-label">Impresiones</span><span class="metric-val">284K</span></div>
+          <div class="metric-row"><span class="metric-label">ROI publicidad</span><span class="metric-val" style="color:#34d399">312%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Integrations + BI tools -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <!-- Integration status -->
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">⚡ Estado de Integraciones</span></div>
+        <div class="card-body">
+          <div class="integ-section">
+            <div class="integ-section-title">📣 Publicidad</div>
+            <div class="integ-grid">
+              <div class="integ-chip"><div class="integ-dot dot-green"></div><div><div class="integ-name">Meta Ads</div><div class="integ-status">Sync hace 2h</div></div></div>
+              <div class="integ-chip"><div class="integ-dot dot-green"></div><div><div class="integ-name">Google Ads</div><div class="integ-status">Sync hace 1h</div></div></div>
+              <div class="integ-chip"><div class="integ-dot dot-green"></div><div><div class="integ-name">TikTok Ads</div><div class="integ-status">Sync hace 4h</div></div></div>
+              <div class="integ-chip"><div class="integ-dot dot-gray"></div><div><div class="integ-name">LinkedIn</div><div class="integ-status">Desconectado</div></div><button class="connect-btn">Conectar</button></div>
+              <div class="integ-chip"><div class="integ-dot dot-gray"></div><div><div class="integ-name">X Corp.</div><div class="integ-status">Desconectado</div></div><button class="connect-btn">Conectar</button></div>
+            </div>
+          </div>
+          <div class="integ-section">
+            <div class="integ-section-title">📊 Analytics</div>
+            <div class="integ-grid">
+              <div class="integ-chip"><div class="integ-dot dot-green"></div><div><div class="integ-name">Google Analytics</div><div class="integ-status">Activo</div></div></div>
+              <div class="integ-chip"><div class="integ-dot dot-green"></div><div><div class="integ-name">Search Console</div><div class="integ-status">Activo</div></div></div>
+              <div class="integ-chip"><div class="integ-dot dot-gray"></div><div><div class="integ-name">Hotjar</div><div class="integ-status">Desconectado</div></div><button class="connect-btn">Conectar</button></div>
+            </div>
+          </div>
+          <div class="integ-section">
+            <div class="integ-section-title">✉️ Marketing</div>
+            <div class="integ-grid">
+              <div class="integ-chip"><div class="integ-dot dot-green"></div><div><div class="integ-name">HubSpot</div><div class="integ-status">CRM activo</div></div></div>
+              <div class="integ-chip"><div class="integ-dot dot-green"></div><div><div class="integ-name">Mailchimp</div><div class="integ-status">Email activo</div></div></div>
+              <div class="integ-chip"><div class="integ-dot dot-gray"></div><div><div class="integ-name">Brevo</div><div class="integ-status">Inactivo</div></div><button class="connect-btn">Conectar</button></div>
+            </div>
+          </div>
+          <div class="integ-section" style="margin-bottom:0">
+            <div class="integ-section-title">💳 Pagos</div>
+            <div class="integ-grid">
+              <div class="integ-chip"><div class="integ-dot dot-green"></div><div><div class="integ-name">Bancard</div><div class="integ-status">Paraguay</div></div></div>
+              <div class="integ-chip"><div class="integ-dot dot-green"></div><div><div class="integ-name">MercadoPago</div><div class="integ-status">Activo</div></div></div>
+              <div class="integ-chip"><div class="integ-dot dot-green"></div><div><div class="integ-name">Stripe</div><div class="integ-status">Activo</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BI Tools -->
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">📊 Business Intelligence Tools</span></div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
+          <a href="https://lookerstudio.google.com" target="_blank" style="text-decoration:none;color:inherit" class="bi-tool">
+            <div class="bi-logo" style="background:#e8f4ff">📊</div>
+            <div><div class="bi-name">Google Looker Studio</div><div class="bi-desc">Dashboards conectados a Google Analytics y Ads</div></div>
+            <div class="bi-arrow">↗</div>
+          </a>
+          <a href="https://powerbi.microsoft.com" target="_blank" style="text-decoration:none;color:inherit" class="bi-tool">
+            <div class="bi-logo" style="background:#fff9e6">📈</div>
+            <div><div class="bi-name">Power BI</div><div class="bi-desc">Reportes de ingresos y métricas SaaS</div></div>
+            <div class="bi-arrow">↗</div>
+          </a>
+          <a href="https://tableau.com" target="_blank" style="text-decoration:none;color:inherit" class="bi-tool">
+            <div class="bi-logo" style="background:#e8f0ff">📉</div>
+            <div><div class="bi-name">Tableau</div><div class="bi-desc">Análisis avanzado de datos de clientes</div></div>
+            <div class="bi-arrow">↗</div>
+          </a>
+          <a href="https://analytics.google.com" target="_blank" style="text-decoration:none;color:inherit" class="bi-tool">
+            <div class="bi-logo" style="background:#fff3e8">🔥</div>
+            <div><div class="bi-name">Google Analytics 4</div><div class="bi-desc">Tráfico web, embudos y conversiones</div></div>
+            <div class="bi-arrow">↗</div>
+          </a>
+          <a href="https://app.hubspot.com" target="_blank" style="text-decoration:none;color:inherit" class="bi-tool">
+            <div class="bi-logo" style="background:#fff2ec">🤝</div>
+            <div><div class="bi-name">HubSpot CRM</div><div class="bi-desc">Pipeline de ventas, leads y clientes</div></div>
+            <div class="bi-arrow">↗</div>
+          </a>
+
+          <div style="padding-top:12px;border-top:1px solid var(--border)">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px">🔑 Configurar tokens API</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button style="padding:6px 12px;background:rgba(124,110,245,.1);border:1px solid rgba(124,110,245,.3);color:#a5b4fc;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">Meta Token</button>
+              <button style="padding:6px 12px;background:rgba(124,110,245,.1);border:1px solid rgba(124,110,245,.3);color:#a5b4fc;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">Google API Key</button>
+              <button style="padding:6px 12px;background:rgba(124,110,245,.1);border:1px solid rgba(124,110,245,.3);color:#a5b4fc;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">TikTok Token</button>
+              <button style="padding:6px 12px;background:rgba(124,110,245,.1);border:1px solid rgba(124,110,245,.3);color:#a5b4fc;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer">HubSpot Key</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

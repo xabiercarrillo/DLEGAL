@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XLegal · Facturación</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--navy:#0d0d1a;--gold:#c9a84c;--bg:#fafaf8;--card:#fff;--border:#e8e5de;--text:#1c1917;--muted:#78716c;--green:#059669}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);min-height:100vh;display:flex}
+
+.sidebar{width:230px;background:var(--navy);flex-shrink:0;display:flex;flex-direction:column}
+.sidebar-top{padding:18px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
+.firm-name{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#fff}
+.firm-ruc{font-size:11px;color:rgba(255,255,255,.3);margin-top:3px}
+.nav{padding:14px 10px;flex:1}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;color:rgba(255,255,255,.4);font-size:12.5px;cursor:pointer;margin-bottom:1px}
+.nav-item.active{background:rgba(201,168,76,.15);color:var(--gold);font-weight:600}
+.nav-item:hover{background:rgba(255,255,255,.05);color:rgba(255,255,255,.8)}
+
+.main{flex:1;overflow:auto}
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 28px;height:56px;display:flex;align-items:center;gap:12px}
+.page-title{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;flex:1}
+.btn{padding:8px 16px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;border:none;transition:.15s;display:flex;align-items:center;gap:6px}
+.btn-outline{background:#fff;border:1.5px solid var(--border);color:var(--text)}
+.btn-gold{background:var(--gold);color:var(--navy)}
+.btn-navy{background:var(--navy);color:#fff}
+
+.content{padding:22px 28px}
+
+/* Revenue bar */
+.rev-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.rv{background:#fff;border-radius:14px;padding:18px;border:1px solid var(--border)}
+.rv-ico{font-size:22px;margin-bottom:10px}
+.rv-val{font-family:'Syne',sans-serif;font-weight:800;font-size:24px;line-height:1}
+.rv-label{font-size:11px;color:var(--muted);margin-top:5px}
+.rv-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;margin-top:8px}
+.rb-green{background:#dcfce7;color:#16a34a}.rb-red{background:#fee2e2;color:#dc2626}.rb-amber{background:#fef3c7;color:#92400e}
+
+/* 2-col layout */
+.main-grid{display:grid;grid-template-columns:1fr 320px;gap:20px}
+
+/* Invoice table */
+.card{background:#fff;border-radius:14px;border:1px solid var(--border);overflow:hidden}
+.card-hdr{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:14px}
+.tabs-row{display:flex;gap:2px;padding:14px 20px 0}
+.tab{padding:9px 16px;font-size:12px;font-weight:600;cursor:pointer;border-radius:9px 9px 0 0;border:1px solid transparent;border-bottom:none;color:var(--muted)}
+.tab.active{background:#fff;border-color:var(--border);color:var(--text);position:relative;top:1px}
+
+table{width:100%;border-collapse:collapse}
+th{padding:10px 16px;background:#fafaf8;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:12px 16px;font-size:12.5px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafaf8}
+
+.inv-num{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)}
+.inv-client{font-weight:600;font-size:13px}
+.inv-case{font-size:11px;color:var(--muted);margin-top:1px}
+.amount{font-family:'Syne',sans-serif;font-weight:700;font-size:14px}
+.st-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600}
+.st-paid{background:#dcfce7;color:#16a34a}.st-pending{background:#eff6ff;color:#1d4ed8}
+.st-overdue{background:#fee2e2;color:#dc2626}.st-draft{background:#f3f4f6;color:#6b7280}
+.dot{width:6px;height:6px;border-radius:50%}
+
+.action-btn{padding:5px 10px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;border:none;transition:.15s}
+.ab-view{background:#f3f4f6;color:var(--text)}.ab-pay{background:#dcfce7;color:#16a34a}.ab-remind{background:#fef3c7;color:#92400e}
+
+/* Right panel */
+.right-col{display:flex;flex-direction:column;gap:18px}
+.mini-card{background:#fff;border-radius:14px;border:1px solid var(--border);overflow:hidden}
+.mc-hdr{padding:14px 16px;border-bottom:1px solid var(--border);font-family:'Syne',sans-serif;font-weight:700;font-size:13px}
+
+/* Chart months */
+.month-bars{display:flex;align-items:flex-end;gap:5px;height:90px;padding:8px 0}
+.mb-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.mb-bar{width:100%;border-radius:4px 4px 0 0}
+.mb-lbl{font-size:9px;color:var(--muted)}
+
+/* Client list */
+.cl-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border)}
+.cl-row:last-child{border-bottom:none}
+.cl-av{width:32px;height:32px;border-radius:9px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:11px;color:var(--gold);flex-shrink:0}
+.cl-name{font-size:12px;font-weight:600;flex:1}
+.cl-amount{font-family:'Syne',sans-serif;font-weight:700;font-size:13px}
+
+/* New invoice form preview */
+.form-section{padding:16px}
+.field-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:5px}
+.field-input{width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:12px;background:#fafaf8}
+.timbrado-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#dcfce7;border:1.5px solid #86efac;border-radius:9px;font-size:11px;font-weight:700;color:#16a34a}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-top">
+    <div class="firm-name">González & Morales Abogados</div>
+    <div class="firm-ruc">RUC: 80123456-1 · Timbrado: 12345678</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item">📊 Dashboard</div>
+    <div class="nav-item">⚖️ Casos</div>
+    <div class="nav-item">👥 Clientes</div>
+    <div class="nav-item">📅 Audiencias</div>
+    <div class="nav-item">⏰ Plazos</div>
+    <div class="nav-item">📄 Documentos</div>
+    <div class="nav-item active">💳 Facturación</div>
+    <div class="nav-item">📊 Reportes</div>
+    <div class="nav-item">🤖 LEXI IA</div>
+  </nav>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <span class="page-title">💳 Facturación</span>
+    <div class="timbrado-chip" style="font-size:11px">✅ Timbrado 12345678 · Vigente</div>
+    <button class="btn btn-outline">📤 Exportar CSV</button>
+    <button class="btn btn-navy">+ Nueva Factura</button>
+  </div>
+
+  <div class="content">
+    <!-- Revenue stats -->
+    <div class="rev-bar">
+      <div class="rv">
+        <div class="rv-ico">💰</div>
+        <div class="rv-val">₲ 8.4M</div>
+        <div class="rv-label">Cobrado — Marzo 2026</div>
+        <div class="rv-badge rb-green">↑ +12% vs Feb</div>
+      </div>
+      <div class="rv">
+        <div class="rv-ico">⏳</div>
+        <div class="rv-val">₲ 3.1M</div>
+        <div class="rv-label">Por cobrar</div>
+        <div class="rv-badge rb-amber">7 facturas</div>
+      </div>
+      <div class="rv">
+        <div class="rv-ico">🔴</div>
+        <div class="rv-val">₲ 1.2M</div>
+        <div class="rv-label">Vencido</div>
+        <div class="rv-badge rb-red">3 facturas</div>
+      </div>
+      <div class="rv">
+        <div class="rv-ico">📊</div>
+        <div class="rv-val">₲ 12.7M</div>
+        <div class="rv-label">Acumulado 2026</div>
+        <div class="rv-badge rb-green">En objetivo</div>
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <!-- Invoice table -->
+      <div>
+        <div class="card">
+          <div style="background:#fafaf8;border-bottom:1px solid var(--border);padding:4px 20px 0;display:flex;gap:2px">
+            <div class="tab active">Todas</div>
+            <div class="tab">Pagadas</div>
+            <div class="tab">Pendientes</div>
+            <div class="tab">Vencidas</div>
+          </div>
+          <table>
+            <thead><tr>
+              <th>N° Factura</th><th>Cliente</th><th>Concepto</th>
+              <th>Monto</th><th>Vence</th><th>Estado</th><th>Acciones</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td><div class="inv-num">F-2026-087</div></td>
+                <td><div class="inv-client">Roberto López</div><div class="inv-case">Caso #2024-047</div></td>
+                <td style="font-size:12px">Honorarios profesionales — Juicio ordinario</td>
+                <td><div class="amount">₲ 1.500.000</div></td>
+                <td style="font-size:12px">20/03/2026</td>
+                <td><span class="st-pill st-pending"><span class="dot" style="background:#3b82f6"></span>Emitida</span></td>
+                <td><div style="display:flex;gap:5px"><button class="action-btn ab-view">📄 PDF</button><button class="action-btn ab-pay">✓ Pago</button><button class="action-btn ab-remind">📧</button></div></td>
+              </tr>
+              <tr>
+                <td><div class="inv-num">F-2026-086</div></td>
+                <td><div class="inv-client">Importadora del Sur S.R.L.</div><div class="inv-case">Caso #2024-033</div></td>
+                <td style="font-size:12px">Retribución mensual + gastos</td>
+                <td><div class="amount">₲ 2.800.000</div></td>
+                <td style="font-size:12px">15/03/2026</td>
+                <td><span class="st-pill st-paid"><span class="dot" style="background:#16a34a"></span>Pagada</span></td>
+                <td><div style="display:flex;gap:5px"><button class="action-btn ab-view">📄 PDF</button></div></td>
+              </tr>
+              <tr style="background:#fff9f9">
+                <td><div class="inv-num">F-2026-081</div></td>
+                <td><div class="inv-client">Carlos Rodríguez</div><div class="inv-case">Caso #2025-008</div></td>
+                <td style="font-size:12px">Honorarios divorcio + mediación</td>
+                <td><div class="amount" style="color:#dc2626">₲ 800.000</div></td>
+                <td style="font-size:12px;color:#dc2626;font-weight:700">VENCIDA</td>
+                <td><span class="st-pill st-overdue"><span class="dot" style="background:#dc2626"></span>Vencida</span></td>
+                <td><div style="display:flex;gap:5px"><button class="action-btn ab-view">📄 PDF</button><button class="action-btn ab-pay">✓ Pago</button><button class="action-btn ab-remind">🔔</button></div></td>
+              </tr>
+              <tr>
+                <td><div class="inv-num">F-2026-084</div></td>
+                <td><div class="inv-client">María Fernández</div><div class="inv-case">Caso #2024-051</div></td>
+                <td style="font-size:12px">Honorarios laborales — cuota 2/3</td>
+                <td><div class="amount">₲ 500.000</div></td>
+                <td style="font-size:12px">28/03/2026</td>
+                <td><span class="st-pill st-pending"><span class="dot" style="background:#3b82f6"></span>Emitida</span></td>
+                <td><div style="display:flex;gap:5px"><button class="action-btn ab-view">📄 PDF</button><button class="action-btn ab-pay">✓ Pago</button></div></td>
+              </tr>
+              <tr style="background:#f9fafb">
+                <td><div class="inv-num">F-2026-089</div></td>
+                <td><div class="inv-client">Banco Nacional S.A.</div><div class="inv-case">Caso #2025-012</div></td>
+                <td style="font-size:12px">Anticipo honorarios — caso nuevo</td>
+                <td><div class="amount">₲ 3.000.000</div></td>
+                <td style="font-size:12px">—</td>
+                <td><span class="st-pill st-draft"><span class="dot" style="background:#9ca3af"></span>Borrador</span></td>
+                <td><div style="display:flex;gap:5px"><button class="action-btn ab-view">✏️ Editar</button><button class="action-btn" style="background:#fef3c7;color:#92400e">📤 Emitir</button></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right panel -->
+      <div class="right-col">
+        <!-- Monthly chart -->
+        <div class="mini-card">
+          <div class="mc-hdr">📈 Ingresos 2026</div>
+          <div style="padding:14px 16px">
+            <div class="month-bars">
+              <div class="mb-wrap"><div class="mb-bar" style="height:60%;background:#e8e5de"></div><div class="mb-lbl">Ene</div></div>
+              <div class="mb-wrap"><div class="mb-bar" style="height:75%;background:#e8e5de"></div><div class="mb-lbl">Feb</div></div>
+              <div class="mb-wrap"><div class="mb-bar" style="height:100%;background:#c9a84c"></div><div class="mb-lbl">Mar</div></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);font-size:11px">
+              <span style="color:var(--muted)">Enero</span><span style="font-weight:700">₲ 6.8M</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:5px">
+              <span style="color:var(--muted)">Febrero</span><span style="font-weight:700">₲ 7.5M</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:5px">
+              <span style="color:var(--muted)">Marzo (cursado)</span><span style="font-weight:700;color:#c9a84c">₲ 8.4M</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top clients by billing -->
+        <div class="mini-card">
+          <div class="mc-hdr">💼 Top Clientes</div>
+          <div class="cl-row"><div class="cl-av">IS</div><div class="cl-name">Importadora del Sur</div><span class="cl-amount">₲ 5.6M</span></div>
+          <div class="cl-row"><div class="cl-av">BN</div><div class="cl-name">Banco Nacional S.A.</div><span class="cl-amount">₲ 3.0M</span></div>
+          <div class="cl-row"><div class="cl-av">RL</div><div class="cl-name">Roberto López</div><span class="cl-amount">₲ 1.5M</span></div>
+          <div class="cl-row"><div class="cl-av">CR</div><div class="cl-name">Carlos Rodríguez</div><span class="cl-amount">₲ 800K</span></div>
+        </div>
+
+        <!-- Quick new invoice -->
+        <div class="mini-card">
+          <div class="mc-hdr">⚡ Factura Rápida</div>
+          <div class="form-section">
+            <div class="field-lbl">Cliente</div>
+            <select class="field-input"><option>Roberto López — Caso #2024-047</option></select>
+            <div class="field-lbl">Concepto</div>
+            <input class="field-input" placeholder="Honorarios profesionales…">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div>
+                <div class="field-lbl">Monto (₲)</div>
+                <input class="field-input" placeholder="1.000.000">
+              </div>
+              <div>
+                <div class="field-lbl">IVA</div>
+                <select class="field-input"><option>10% incluido</option><option>5%</option><option>Exento</option></select>
+              </div>
+            </div>
+            <button style="width:100%;padding:11px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer">🖨️ Generar Factura</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

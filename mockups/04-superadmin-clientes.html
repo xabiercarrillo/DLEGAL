@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XLegal · Gestión de Clientes</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--navy:#0d0d1a;--gold:#c9a84c;--bg:#f8f7f4;--card:#fff;--border:#e8e5de;--text:#1c1917;--muted:#78716c}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);display:flex;min-height:100vh}
+.sidebar{width:200px;background:var(--navy);padding:20px 12px;display:flex;flex-direction:column;flex-shrink:0}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--gold);padding:4px 8px 20px;border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:20px}
+.nav-item{padding:9px 10px;border-radius:10px;color:rgba(255,255,255,.45);font-size:12.5px;cursor:pointer;margin-bottom:3px}
+.nav-item.active{background:rgba(201,168,76,.15);color:var(--gold);font-weight:600}
+.nav-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.8)}
+
+.main{flex:1;overflow:auto}
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+.page-title{font-family:'Syne',sans-serif;font-weight:800;font-size:20px}
+.content{padding:24px 28px}
+
+/* Stats */
+.stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:22px}
+.stat{background:#fff;border-radius:12px;padding:14px 16px;border:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.stat-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.stat-val{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;line-height:1}
+.stat-lbl{font-size:11px;color:var(--muted)}
+
+/* Filters */
+.filter-bar{display:flex;gap:10px;margin-bottom:18px;align-items:center}
+.search-box{flex:1;max-width:320px;position:relative}
+.search-box input{width:100%;padding:9px 9px 9px 36px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;background:#fff;outline:none}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px}
+.filter-btn{padding:9px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:12px;font-weight:600;background:#fff;cursor:pointer;transition:.15s}
+.filter-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn-primary{background:var(--gold);color:var(--navy);border:none;padding:9px 18px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;margin-left:auto}
+
+/* Table */
+.table-wrap{background:#fff;border-radius:14px;border:1px solid var(--border);overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th{padding:11px 16px;background:#fafaf9;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;text-align:left;border-bottom:1px solid var(--border)}
+td{padding:13px 16px;font-size:13px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafaf9}
+.tenant-av{width:34px;height:34px;border-radius:9px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:12px;color:var(--gold)}
+.tenant-name{font-weight:600;font-size:13px}
+.tenant-email{font-size:11px;color:var(--muted)}
+.plan-badge{display:inline-block;padding:2px 9px;border-radius:6px;font-size:10px;font-weight:800}
+.p-solo{background:#f3f4f6;color:#374151}.p-s{background:#dbeafe;color:#1e40af}.p-m{background:#fef3c7;color:#92400e}.p-l{background:#ede9fe;color:#5b21b6}
+.status-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600}
+.st-active{background:#dcfce7;color:#16a34a}.st-trial{background:#f3f4f6;color:#374151}.st-overdue{background:#fee2e2;color:#dc2626}.st-pending{background:#fef3c7;color:#92400e}
+.dot{width:6px;height:6px;border-radius:50%}
+.action-btn{padding:5px 10px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;border:none;transition:.15s}
+.ab-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.ab-ghost:hover{background:#f3f4f6}
+.ab-primary{background:var(--navy);color:#fff}
+.ab-red{background:#fee2e2;color:#dc2626}
+
+/* Drawer preview */
+.drawer{position:fixed;right:0;top:0;bottom:0;width:380px;background:#fff;border-left:1px solid var(--border);box-shadow:-4px 0 24px rgba(0,0,0,.08);display:flex;flex-direction:column;z-index:100}
+.drawer-hdr{background:var(--navy);padding:20px 24px;display:flex;align-items:center;justify-content:space-between}
+.drawer-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:#fff}
+.drawer-close{width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.1);border:none;color:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+.drawer-body{padding:24px;flex:1;overflow-y:auto}
+.field-row{margin-bottom:16px}
+.field-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.field-val{font-size:14px;font-weight:500;color:var(--text)}
+.field-meta{font-size:11px;color:var(--muted);margin-top:1px}
+.drawer-actions{padding:16px 24px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+.da-btn{width:100%;padding:11px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none;text-align:center}
+.da-primary{background:var(--navy);color:#fff}.da-green{background:#dcfce7;color:#16a34a}.da-red{background:#fee2e2;color:#dc2626}.da-ghost{background:#f3f4f6;color:var(--text)}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="logo">X Legal</div>
+  <div class="nav-item">📊 Dashboard</div>
+  <div class="nav-item active">🏢 Clientes</div>
+  <div class="nav-item">💳 Facturación</div>
+  <div class="nav-item">👥 Usuarios</div>
+  <div class="nav-item">📣 Publicidad</div>
+  <div class="nav-item">📈 Analytics</div>
+  <div class="nav-item">🧠 Business Intel.</div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title">🏢 Gestión de Clientes</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">47 tenants · PostgreSQL schemas aislados</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn-primary">+ Nuevo Cliente</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Stats -->
+    <div class="stat-row">
+      <div class="stat"><div class="stat-ico" style="background:#f0fdf4">🏢</div><div><div class="stat-val">47</div><div class="stat-lbl">Totales</div></div></div>
+      <div class="stat"><div class="stat-ico" style="background:#dcfce7">✅</div><div><div class="stat-val">39</div><div class="stat-lbl">Activos</div></div></div>
+      <div class="stat"><div class="stat-ico" style="background:#f3f4f6">🔄</div><div><div class="stat-val">5</div><div class="stat-lbl">En Trial</div></div></div>
+      <div class="stat"><div class="stat-ico" style="background:#fee2e2">⚠️</div><div><div class="stat-val">4</div><div class="stat-lbl">Vencidos</div></div></div>
+      <div class="stat"><div class="stat-ico" style="background:#fef3c7">💰</div><div><div class="stat-val">₲18.2M</div><div class="stat-lbl">MRR total</div></div></div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input placeholder="Buscar por nombre, email, RUC…" value="">
+      </div>
+      <button class="filter-btn active">Todos</button>
+      <button class="filter-btn">Activos</button>
+      <button class="filter-btn">Trial</button>
+      <button class="filter-btn">Vencidos</button>
+      <select style="padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:12px;background:#fff;font-family:'DM Sans',sans-serif">
+        <option>Todos los planes</option><option>Solo</option><option>Bufete S</option><option>Bufete M</option><option>Bufete L</option>
+      </select>
+      <button class="btn-primary" style="margin-left:0">📤 Exportar</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Cliente</th><th>Plan</th><th>Usuarios</th>
+          <th>Próx. pago</th><th>Estado</th><th>Acciones</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td><div style="display:flex;align-items:center;gap:10px"><div class="tenant-av">RL</div><div><div class="tenant-name">Romero & López Consulting</div><div class="tenant-email">romero@gmail.com · Asunción · RUC 80123456-1</div></div></div></td>
+            <td><span class="plan-badge p-l">Bufete L</span></td><td><b>12</b>/ilim.</td>
+            <td style="font-size:12px">15 Mar 2026</td>
+            <td><span class="status-pill st-active"><span class="dot" style="background:#16a34a"></span>Activo</span></td>
+            <td><div style="display:flex;gap:5px"><button class="action-btn ab-ghost">Ver</button><button class="action-btn ab-ghost">💬 WA</button><button class="action-btn ab-primary">Gestionar</button></div></td>
+          </tr>
+          <tr style="background:#fffbeb">
+            <td><div style="display:flex;align-items:center;gap:10px"><div class="tenant-av">AV</div><div><div class="tenant-name">Abog. Ana Villalba</div><div class="tenant-email">ana.villalba@outlook.com · CDE</div></div></div></td>
+            <td><span class="plan-badge p-solo">Solo</span></td><td><b>1</b>/1</td>
+            <td style="font-size:12px;color:#dc2626;font-weight:700">VENCIDO</td>
+            <td><span class="status-pill st-overdue"><span class="dot" style="background:#dc2626"></span>Vencido</span></td>
+            <td><div style="display:flex;gap:5px"><button class="action-btn ab-ghost">Ver</button><button class="action-btn ab-ghost" style="color:#16a34a;border-color:#86efac">✓ Pago</button><button class="action-btn ab-red">⚠</button></div></td>
+          </tr>
+          <tr>
+            <td><div style="display:flex;align-items:center;gap:10px"><div class="tenant-av">GM</div><div><div class="tenant-name">González & Morales Abogados</div><div class="tenant-email">gmorales@gma.com.py · Asunción</div></div></div></td>
+            <td><span class="plan-badge p-m">Bufete M</span></td><td><b>8</b>/10</td>
+            <td style="font-size:12px">22 Mar 2026</td>
+            <td><span class="status-pill st-active"><span class="dot" style="background:#16a34a"></span>Activo</span></td>
+            <td><div style="display:flex;gap:5px"><button class="action-btn ab-ghost">Ver</button><button class="action-btn ab-ghost">💬 WA</button><button class="action-btn ab-primary">Gestionar</button></div></td>
+          </tr>
+          <tr style="background:#f0f9ff">
+            <td><div style="display:flex;align-items:center;gap:10px"><div class="tenant-av">EP</div><div><div class="tenant-name">Estudio Penayo Hnos.</div><div class="tenant-email">penayo@gmail.com · Encarnación</div></div></div></td>
+            <td><span class="plan-badge p-s">Bufete S</span></td><td><b>3</b>/5</td>
+            <td style="font-size:12px;color:#92400e">Trial · 3 días</td>
+            <td><span class="status-pill st-trial"><span class="dot" style="background:#6b7280"></span>En Trial</span></td>
+            <td><div style="display:flex;gap:5px"><button class="action-btn ab-ghost">Ver</button><button class="action-btn ab-ghost">📧 Email</button><button class="action-btn ab-primary">Convertir</button></div></td>
+          </tr>
+          <tr>
+            <td><div style="display:flex;align-items:center;gap:10px"><div class="tenant-av">JC</div><div><div class="tenant-name">Jiménez & Cardozo</div><div class="tenant-email">jimenez@legal.com.py · Asunción</div></div></div></td>
+            <td><span class="plan-badge p-s">Bufete S</span></td><td><b>4</b>/5</td>
+            <td style="font-size:12px">28 Mar 2026</td>
+            <td><span class="status-pill st-active"><span class="dot" style="background:#16a34a"></span>Activo</span></td>
+            <td><div style="display:flex;gap:5px"><button class="action-btn ab-ghost">Ver</button><button class="action-btn ab-ghost">💬 WA</button><button class="action-btn ab-primary">Gestionar</button></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Drawer (ficha de cliente) -->
+<div class="drawer">
+  <div class="drawer-hdr">
+    <div>
+      <div class="drawer-title">Romero & López Consulting</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">Schema: t_7f4a8e...</div>
+    </div>
+    <button class="drawer-close">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div style="display:flex;gap:10px;margin-bottom:20px">
+      <span class="plan-badge p-l" style="font-size:12px;padding:4px 12px">Bufete L</span>
+      <span class="status-pill st-active"><span class="dot" style="background:#16a34a"></span>Activo</span>
+    </div>
+    <div class="field-row"><div class="field-label">Nombre legal</div><div class="field-val">Romero & López S.R.L.</div></div>
+    <div class="field-row"><div class="field-label">RUC</div><div class="field-val">80987654-1</div></div>
+    <div class="field-row"><div class="field-label">Administrador</div><div class="field-val">Abog. Carlos Romero</div><div class="field-meta">carlos@romerolopez.com.py</div></div>
+    <div class="field-row"><div class="field-label">Contacto</div><div class="field-val">0981 234 567</div><div class="field-meta">WhatsApp: 0981 234 567</div></div>
+    <div class="field-row"><div class="field-label">Usuarios</div><div class="field-val">12 usuarios · Sin límite</div></div>
+    <div class="field-row"><div class="field-label">Próximo pago</div><div class="field-val">15 de Marzo, 2026</div><div class="field-meta" style="color:#92400e">Precio negociado: ₲ 800.000/mes</div></div>
+    <div class="field-row"><div class="field-label">Schema BD</div><div class="field-val" style="font-family:monospace;font-size:12px;background:#f3f4f6;padding:6px 10px;border-radius:7px">t_7f4a8e2d1c9b</div></div>
+    <div class="field-row"><div class="field-label">Notas internas</div><div class="field-val" style="font-size:13px">Referido por Abog. Jiménez. Cliente premium — trato preferencial. Facturación a nombre de la empresa.</div></div>
+  </div>
+  <div class="drawer-actions">
+    <button class="da-btn da-primary">✏️ Editar datos del cliente</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="da-btn da-green">💳 Registrar pago</button>
+      <button class="da-btn da-ghost">🔑 Resetear acceso</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="da-btn da-ghost">💬 WhatsApp</button>
+      <button class="da-btn da-ghost">📧 Enviar email</button>
+    </div>
+    <button class="da-btn da-red">🚫 Desactivar cuenta</button>
+  </div>
+</div>
+</body>
+</html>

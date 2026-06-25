@@ -1,0 +1,49 @@
+# ── Entorno / secretos (NO subir) ──
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# ── Node / Next ──
+node_modules/
+.next/
+out/
+build/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
+
+# ── Datos / media / backups ──
+media/
+backups/
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+
+# ── Herramientas locales / trabajo ──
+.remember/
+.playwright-mcp/
+/*.png
+scratchpad/
+
+# ── Logs ──
+*.log
+logs/
+
+# ── Sistema operativo / editor ──
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

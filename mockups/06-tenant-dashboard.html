@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XLegal · Dashboard del Bufete</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--navy:#0d0d1a;--gold:#c9a84c;--bg:#f6f7f9;--card:#fff;--border:#eaecf0;--text:#101828;--muted:#667085;--accent:#7C3AED}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);min-height:100vh;display:flex}
+
+/* Sidebar */
+.sidebar{width:230px;background:var(--navy);display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-top{padding:20px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
+.firm-name{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#fff}
+.firm-plan{display:inline-block;background:var(--gold);color:var(--navy);font-size:9px;font-weight:800;padding:2px 8px;border-radius:4px;letter-spacing:.5px;margin-top:4px;text-transform:uppercase}
+.nav{padding:16px 10px;flex:1}
+.nav-group{margin-bottom:20px}
+.nav-group-lbl{font-size:9px;font-weight:800;letter-spacing:2px;color:rgba(255,255,255,.2);padding:0 8px;margin-bottom:8px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:10px;color:rgba(255,255,255,.45);font-size:13px;font-weight:500;cursor:pointer;margin-bottom:2px;transition:.15s}
+.nav-item.active{background:rgba(201,168,76,.15);color:var(--gold);font-weight:700}
+.nav-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.8)}
+.nav-badge{margin-left:auto;background:#ef4444;color:#fff;border-radius:99px;font-size:9px;font-weight:700;padding:1px 6px}
+
+/* Topbar */
+.main{flex:1;overflow:auto;display:flex;flex-direction:column}
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-greeting{font-family:'Syne',sans-serif;font-weight:700;font-size:16px}
+.topbar-date{font-size:12px;color:var(--muted);margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.ia-btn{display:flex;align-items:center;gap:8px;padding:8px 16px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#5b21b6);color:#fff;font-size:13px;font-weight:700;cursor:pointer;border:none}
+.notif-btn{width:38px;height:38px;border-radius:10px;background:#f3f4f6;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.notif-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;background:#ef4444;border-radius:50%;border:2px solid #fff}
+
+/* Content */
+.content{padding:24px 28px;flex:1}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat{background:#fff;border-radius:14px;padding:18px;border:1px solid var(--border);position:relative}
+.stat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.stat-ico{width:36px;height:36px;border-radius:10px;font-size:16px;display:flex;align-items:center;justify-content:center}
+.stat-change{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px}
+.chng-up{background:#ecfdf3;color:#027a48}.chng-dn{background:#fff1f3;color:#c01048}
+.stat-val{font-family:'Syne',sans-serif;font-weight:800;font-size:26px;line-height:1}
+.stat-label{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* Main grid */
+.main-grid{display:grid;grid-template-columns:1fr 320px;gap:20px}
+
+/* Card */
+.card{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.card-hdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-weight:700;font-size:14px;color:var(--text)}
+.view-all{font-size:12px;font-weight:600;color:var(--accent);cursor:pointer}
+
+/* Case list */
+.case-row{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border)}
+.case-row:last-child{border-bottom:none}
+.case-row:hover{background:#fafafa}
+.case-num{font-size:11px;font-weight:700;color:var(--muted);font-family:monospace;min-width:56px}
+.case-title{font-weight:600;font-size:13px;color:var(--text)}
+.case-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.matter-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px}
+.m-laboral{background:#fff7ed;color:#c2410c}.m-civil{background:#eff6ff;color:#1d4ed8}.m-comercial{background:#f5f3ff;color:#6d28d9}.m-penal{background:#fff1f2;color:#be123c}.m-familia{background:#fdf4ff;color:#86198f}
+.status-pip{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600}
+.active-dot{width:5px;height:5px;border-radius:50%;background:#10b981}
+
+/* Deadlines */
+.deadline-item{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.deadline-item:last-child{border-bottom:none}
+.dl-date{width:42px;height:42px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.dl-day{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;line-height:1}
+.dl-month{font-size:9px;font-weight:700;text-transform:uppercase}
+.dl-critical{background:#fee2e2;color:#dc2626}.dl-high{background:#fef3c7;color:#92400e}.dl-normal{background:#f3f4f6;color:#374151}
+.dl-title{font-weight:600;font-size:13px}
+.dl-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.priority-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;margin-left:auto;flex-shrink:0}
+.p-critico{background:#fee2e2;color:#dc2626}.p-alto{background:#fef3c7;color:#92400e}.p-medio{background:#f0fdf4;color:#16a34a}
+
+/* LEXI AI widget */
+.ai-widget{background:linear-gradient(135deg,#1a0a2e,#2d1b4e);border-radius:14px;padding:20px;color:#fff;border:1px solid rgba(124,58,237,.3)}
+.ai-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ai-avatar{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:20px}
+.ai-name{font-family:'Syne',sans-serif;font-weight:800;font-size:16px}
+.ai-status{font-size:11px;color:rgba(255,255,255,.4);display:flex;align-items:center;gap:4px}
+.ai-dot{width:6px;height:6px;border-radius:50%;background:#34d399}
+.ai-suggestions{display:flex;flex-direction:column;gap:6px}
+.ai-chip{padding:9px 12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:9px;font-size:12px;cursor:pointer;transition:.15s}
+.ai-chip:hover{background:rgba(255,255,255,.12)}
+.ai-input{display:flex;gap:8px;margin-top:12px}
+.ai-input input{flex:1;padding:9px 12px;border-radius:9px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:#fff;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;outline:none}
+.ai-input button{padding:9px 14px;background:#7c3aed;border:none;border-radius:9px;color:#fff;font-size:13px;cursor:pointer}
+</style>
+</head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-top">
+    <div class="firm-name">González & Morales</div>
+    <div><span class="firm-plan">Bufete M · 8/10 usuarios</span></div>
+  </div>
+  <nav class="nav">
+    <div class="nav-group">
+      <div class="nav-group-lbl">Gestión</div>
+      <div class="nav-item active">📊 Dashboard</div>
+      <div class="nav-item">⚖️ Casos<span class="nav-badge">3</span></div>
+      <div class="nav-item">👥 Clientes</div>
+      <div class="nav-item">📅 Audiencias</div>
+      <div class="nav-item">⏰ Plazos<span class="nav-badge">2</span></div>
+      <div class="nav-item">✅ Tareas</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-lbl">Documentos</div>
+      <div class="nav-item">📄 Documentos</div>
+      <div class="nav-item">📋 Plantillas</div>
+      <div class="nav-item">🤖 LEXI IA</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-lbl">Finanzas</div>
+      <div class="nav-item">💳 Facturación</div>
+      <div class="nav-item">📊 Reportes</div>
+    </div>
+  </nav>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-greeting">Buen día, Abog. González 👋</div>
+      <div class="topbar-date">Martes 10 de marzo 2026 · Asunción, Paraguay</div>
+    </div>
+    <div class="topbar-right">
+      <button class="ia-btn">🤖 Preguntar a LEXI</button>
+      <div class="notif-btn"><div style="font-size:18px">🔔</div><div class="notif-dot"></div></div>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat">
+        <div class="stat-top"><div class="stat-ico" style="background:#eff8ff">⚖️</div><span class="stat-change chng-up">+2 este mes</span></div>
+        <div class="stat-val">28</div><div class="stat-label">Casos activos</div>
+      </div>
+      <div class="stat">
+        <div class="stat-top"><div class="stat-ico" style="background:#f0fdf4">👥</div><span class="stat-change chng-up">+5 clientes</span></div>
+        <div class="stat-val">67</div><div class="stat-label">Clientes totales</div>
+      </div>
+      <div class="stat">
+        <div class="stat-top"><div class="stat-ico" style="background:#fff7ed">⏰</div><span class="stat-change chng-dn">2 vencidos</span></div>
+        <div class="stat-val">8</div><div class="stat-label">Plazos próximos</div>
+      </div>
+      <div class="stat">
+        <div class="stat-top"><div class="stat-ico" style="background:#fdf4ff">💰</div><span class="stat-change chng-up">+12%</span></div>
+        <div class="stat-val">₲8.4M</div><div class="stat-label">Cobrado este mes</div>
+      </div>
+    </div>
+
+    <!-- Main grid -->
+    <div class="main-grid">
+      <!-- Left -->
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <!-- Cases -->
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">⚖️ Casos Recientes</span>
+            <span class="view-all">Ver todos →</span>
+          </div>
+          <div class="case-row">
+            <div class="case-num">#2024-047</div>
+            <div style="flex:1">
+              <div class="case-title">López c/ Constructora Itá S.A.</div>
+              <div class="case-meta"><span class="matter-badge m-civil">Civil</span> · Juicio ordinario · 1er Juzgado CyC</div>
+            </div>
+            <div class="status-pip"><span class="active-dot"></span>Activo</div>
+          </div>
+          <div class="case-row">
+            <div class="case-num">#2024-051</div>
+            <div style="flex:1">
+              <div class="case-title">Fernández, María — Despido injustificado</div>
+              <div class="case-meta"><span class="matter-badge m-laboral">Laboral</span> · Juzgado Laboral N°3</div>
+            </div>
+            <div class="status-pip"><span class="active-dot"></span>Activo</div>
+          </div>
+          <div class="case-row">
+            <div class="case-num">#2025-003</div>
+            <div style="flex:1">
+              <div class="case-title">Importadora del Sur c/ Banco Continental</div>
+              <div class="case-meta"><span class="matter-badge m-comercial">Comercial</span> · Juzgado Mercantil N°2</div>
+            </div>
+            <div class="status-pip"><span class="active-dot"></span>Activo</div>
+          </div>
+          <div class="case-row">
+            <div class="case-num">#2025-008</div>
+            <div style="flex:1">
+              <div class="case-title">Rodríguez — Divorcio por mutuo consentimiento</div>
+              <div class="case-meta"><span class="matter-badge m-familia">Familia</span> · Juzgado de Familia N°1</div>
+            </div>
+            <div class="status-pip"><span class="active-dot" style="background:#f59e0b"></span>Negociación</div>
+          </div>
+        </div>
+
+        <!-- Deadlines -->
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">⏰ Plazos Urgentes</span>
+            <span style="font-size:11px;background:#fee2e2;color:#dc2626;padding:3px 9px;border-radius:6px;font-weight:700">2 vencidos</span>
+          </div>
+          <div class="deadline-item">
+            <div class="dl-date dl-critical"><div class="dl-day">08</div><div class="dl-month">Mar</div></div>
+            <div style="flex:1">
+              <div class="dl-title">Contestación demanda laboral — Fernández</div>
+              <div class="dl-meta">CPC Art. 234 · Plazo 10 días hábiles</div>
+            </div>
+            <span class="priority-tag p-critico">VENCIDO</span>
+          </div>
+          <div class="deadline-item">
+            <div class="dl-date dl-high"><div class="dl-day">12</div><div class="dl-month">Mar</div></div>
+            <div style="flex:1">
+              <div class="dl-title">Ofrecimiento de pruebas — López c/ Constructora</div>
+              <div class="dl-meta">CPC Art. 351 · Plazo 10 días</div>
+            </div>
+            <span class="priority-tag p-alto">2 días</span>
+          </div>
+          <div class="deadline-item">
+            <div class="dl-date dl-normal"><div class="dl-day">18</div><div class="dl-month">Mar</div></div>
+            <div style="flex:1">
+              <div class="dl-title">Presentar recurso de apelación — Importadora</div>
+              <div class="dl-meta">CPC Art. 395 · Plazo 5 días hábiles</div>
+            </div>
+            <span class="priority-tag p-medio">8 días</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: LEXI + activities -->
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <!-- LEXI widget -->
+        <div class="ai-widget">
+          <div class="ai-header">
+            <div class="ai-avatar">🤖</div>
+            <div>
+              <div class="ai-name">LEXI — IA Jurídica</div>
+              <div class="ai-status"><span class="ai-dot"></span>En línea · Paraguay</div>
+            </div>
+          </div>
+          <div class="ai-suggestions">
+            <div class="ai-chip">📝 Redactar contestación para Fernández</div>
+            <div class="ai-chip">⚖️ Analizar contrato — Importadora del Sur</div>
+            <div class="ai-chip">🔍 Jurisprudencia sobre despido injustificado</div>
+            <div class="ai-chip">📄 Generar resumen ejecutivo del caso López</div>
+          </div>
+          <div class="ai-input">
+            <input placeholder="Preguntale algo a LEXI…" />
+            <button>↑</button>
+          </div>
+        </div>
+
+        <!-- Próximas audiencias -->
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">📅 Próximas Audiencias</span><span class="view-all">Ver →</span></div>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;gap:10px;align-items:center">
+              <div style="width:40px;height:40px;background:#eff6ff;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0"><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:#1d4ed8;line-height:1">14</div><div style="font-size:8px;color:#60a5fa;text-transform:uppercase;font-weight:700">Mar</div></div>
+              <div><div style="font-weight:600;font-size:13px">Audiencia preparatoria</div><div style="font-size:11px;color:var(--muted)">López · 09:30h · 1er Juzgado CyC</div></div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center">
+              <div style="width:40px;height:40px;background:#f0fdf4;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0"><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:#16a34a;line-height:1">19</div><div style="font-size:8px;color:#4ade80;text-transform:uppercase;font-weight:700">Mar</div></div>
+              <div><div style="font-weight:600;font-size:13px">Audiencia oral — Fernández</div><div style="font-size:11px;color:var(--muted)">14:00h · Juzgado Laboral N°3</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick actions -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <button style="padding:12px;border-radius:12px;background:#fff;border:1.5px solid var(--border);font-size:12px;font-weight:700;cursor:pointer;transition:.15s;color:var(--text)">➕ Nuevo caso</button>
+          <button style="padding:12px;border-radius:12px;background:#fff;border:1.5px solid var(--border);font-size:12px;font-weight:700;cursor:pointer;transition:.15s;color:var(--text)">👤 Nuevo cliente</button>
+          <button style="padding:12px;border-radius:12px;background:#fff;border:1.5px solid var(--border);font-size:12px;font-weight:700;cursor:pointer;transition:.15s;color:var(--text)">📄 Nuevo doc.</button>
+          <button style="padding:12px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#4f46e5);color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer">🤖 LEXI IA</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

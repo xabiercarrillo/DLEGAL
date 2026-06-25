@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XLegal · Publicidad & Campañas</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--navy:#0d0d1a;--gold:#c9a84c;--bg:#f0f1f5;--card:#fff;--border:#e5e7eb;--text:#111827;--muted:#6b7280}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);min-height:100vh;display:flex}
+
+.sidebar{width:200px;background:var(--navy);padding:20px 12px;display:flex;flex-direction:column;flex-shrink:0}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--gold);padding:4px 8px 20px;border-bottom:1px solid rgba(255,255,255,.07);margin-bottom:20px}
+.nav-item{padding:9px 10px;border-radius:10px;color:rgba(255,255,255,.45);font-size:12.5px;cursor:pointer;margin-bottom:3px;transition:.15s}
+.nav-item.active{background:rgba(201,168,76,.15);color:var(--gold);font-weight:600}
+.nav-item:hover{background:rgba(255,255,255,.06);color:rgba(255,255,255,.8)}
+
+.main{flex:1;overflow:auto}
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+.page-title{font-family:'Syne',sans-serif;font-weight:800;font-size:20px}
+.page-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.topbar-actions{display:flex;gap:10px}
+.btn{padding:8px 16px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:.15s}
+.btn-primary{background:var(--gold);color:var(--navy)}
+.btn-outline{background:#fff;border:1.5px solid var(--border);color:var(--text)}
+.content{padding:24px 28px}
+
+/* KPI row */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+.kpi{background:#fff;border-radius:14px;padding:18px;border:1px solid var(--border)}
+.kpi-ico{font-size:20px;margin-bottom:10px}
+.kpi-val{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;line-height:1}
+.kpi-label{font-size:11px;color:var(--muted);margin-top:5px}
+.kpi-change{font-size:10px;font-weight:700;margin-top:6px;padding:2px 8px;border-radius:5px;display:inline-block}
+.up{background:#dcfce7;color:#16a34a}.down{background:#fee2e2;color:#dc2626}
+
+/* Platform cards */
+.platform-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+.plat-card{background:#fff;border-radius:14px;padding:16px;border:1px solid var(--border);border-top:3px solid transparent;transition:.2s}
+.plat-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08)}
+.plat-meta{display:flex;color:var(--gold);align-items:center;justify-content:space-between;margin-bottom:12px}
+.plat-name{font-weight:700;font-size:13px}
+.plat-status{font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px}
+.st-active{background:#dcfce7;color:#16a34a}.st-paused{background:#fef3c7;color:#92400e}
+.plat-spend{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;margin-bottom:3px}
+.plat-stat{font-size:10px;color:var(--muted)}
+.plat-bar{height:4px;border-radius:2px;margin-top:10px;background:#f3f4f6}
+.plat-bar-fill{height:4px;border-radius:2px}
+
+/* Campaign table */
+.card{background:#fff;border-radius:14px;border:1px solid var(--border);overflow:hidden}
+.card-hdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:14px}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 16px;background:#f9fafb;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;text-align:left;border-bottom:1px solid var(--border)}
+td{padding:12px 16px;font-size:12px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafafa}
+.plat-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:6px}
+.tag-meta{background:#eff6ff;color:#1d4ed8}
+.tag-google{background:#fff7ed;color:#c2410c}
+.tag-tiktok{background:#f0fdf4;color:#166534}
+.tag-linkedin{background:#eff6ff;color:#1e40af}
+.tag-x{background:#f9fafb;color:#374151}
+
+/* Trend chart  */
+.trend-area{height:120px;display:flex;align-items:flex-end;gap:5px;padding:0 4px}
+.trend-bar{flex:1;border-radius:5px 5px 0 0;position:relative}
+.trend-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.trend-lbl{font-size:9px;color:var(--muted)}
+
+.roi-badge{background:linear-gradient(135deg,#0d0d1a,#1a1a2e);color:#c9a84c;padding:4px 10px;border-radius:7px;font-size:11px;font-weight:700}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="logo">X Legal</div>
+  <div class="nav-item">📊 Dashboard</div>
+  <div class="nav-item">🏢 Clientes</div>
+  <div class="nav-item">💳 Facturación</div>
+  <div class="nav-item active">📣 Publicidad</div>
+  <div class="nav-item">📈 Analytics</div>
+  <div class="nav-item">📱 Redes</div>
+  <div class="nav-item">✉️ Marketing</div>
+  <div class="nav-item">🧠 Business Intel.</div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title">📣 Control de Publicidad</div>
+      <div class="page-sub">Campañas activas · Meta · Google · TikTok · LinkedIn · X Corp.</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-outline">📅 Últimos 30 días</button>
+      <button class="btn btn-outline">📤 Exportar</button>
+      <button class="btn btn-primary">+ Nueva Campaña</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- KPIs -->
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-ico">💸</div>
+        <div class="kpi-val">₲ 4.85M</div>
+        <div class="kpi-label">Inversión total / mes</div>
+        <div class="kpi-change up">↑ +14% vs mes ant.</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-ico">👥</div>
+        <div class="kpi-val">142</div>
+        <div class="kpi-label">Leads generados</div>
+        <div class="kpi-change up">↑ +18 este mes</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-ico">🎯</div>
+        <div class="kpi-val">₲ 34K</div>
+        <div class="kpi-label">Costo por Lead (CPL)</div>
+        <div class="kpi-change up">↓ -8% optimizado</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-ico">✅</div>
+        <div class="kpi-val">18</div>
+        <div class="kpi-label">Conversiones (clientes)</div>
+        <div class="kpi-change up">12.7% conv. rate</div>
+      </div>
+      <div class="kpi" style="border-color:#c9a84c;background:linear-gradient(135deg,#0d0d1a 0%,#1a1a2e 100%)">
+        <div class="kpi-ico">📈</div>
+        <div class="kpi-val" style="color:#c9a84c">312%</div>
+        <div class="kpi-label" style="color:rgba(255,255,255,.5)">ROI Publicidad</div>
+        <div style="font-size:10px;color:#c9a84c;margin-top:6px;font-weight:600">₲ 15.1M retorno</div>
+      </div>
+    </div>
+
+    <!-- Platform cards -->
+    <div class="platform-grid">
+      <div class="plat-card" style="border-top-color:#1877F2">
+        <div class="plat-meta"><span class="plat-name">📘 Meta Ads</span><span class="plat-status st-active">● Activo</span></div>
+        <div class="plat-spend">₲ 2.1M</div>
+        <div class="plat-stat">68 leads · 9 conv. · CPL ₲31K</div>
+        <div class="plat-bar"><div class="plat-bar-fill" style="background:#1877F2;width:43%"></div></div>
+      </div>
+      <div class="plat-card" style="border-top-color:#EA4335">
+        <div class="plat-meta"><span class="plat-name">🔴 Google Ads</span><span class="plat-status st-active">● Activo</span></div>
+        <div class="plat-spend">₲ 1.8M</div>
+        <div class="plat-stat">52 leads · 7 conv. · CPL ₲35K</div>
+        <div class="plat-bar"><div class="plat-bar-fill" style="background:#EA4335;width:37%"></div></div>
+      </div>
+      <div class="plat-card" style="border-top-color:#000">
+        <div class="plat-meta"><span class="plat-name">🎵 TikTok Ads</span><span class="plat-status st-active">● Activo</span></div>
+        <div class="plat-spend">₲ 450K</div>
+        <div class="plat-stat">14 leads · 1 conv. · CPL ₲32K</div>
+        <div class="plat-bar"><div class="plat-bar-fill" style="background:#000;width:9%"></div></div>
+      </div>
+      <div class="plat-card" style="border-top-color:#0077B5;opacity:.8">
+        <div class="plat-meta"><span class="plat-name">💼 LinkedIn</span><span class="plat-status st-paused">⏸ Pausado</span></div>
+        <div class="plat-spend">₲ 350K</div>
+        <div class="plat-stat">6 leads · 1 conv. · CPL ₲58K</div>
+        <div class="plat-bar"><div class="plat-bar-fill" style="background:#0077B5;width:7%"></div></div>
+      </div>
+      <div class="plat-card" style="border-top-color:#1DA1F2;opacity:.8">
+        <div class="plat-meta"><span class="plat-name">🐦 X Corp.</span><span class="plat-status st-paused">⏸ Pausado</span></div>
+        <div class="plat-spend">₲ 150K</div>
+        <div class="plat-stat">2 leads · 0 conv. · CPL ₲75K</div>
+        <div class="plat-bar"><div class="plat-bar-fill" style="background:#1DA1F2;width:3%"></div></div>
+      </div>
+    </div>
+
+    <!-- Trend + Table -->
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px">
+      <!-- Trend chart -->
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">📊 Inversión 6 meses</span></div>
+        <div style="padding:16px">
+          <div class="trend-area">
+            <div class="trend-wrap"><div class="trend-bar" style="height:55%;background:#c9a84c20;border:2px solid #c9a84c"></div><div class="trend-lbl">Sep</div></div>
+            <div class="trend-wrap"><div class="trend-bar" style="height:62%;background:#c9a84c20;border:2px solid #c9a84c"></div><div class="trend-lbl">Oct</div></div>
+            <div class="trend-wrap"><div class="trend-bar" style="height:73%;background:#c9a84c20;border:2px solid #c9a84c"></div><div class="trend-lbl">Nov</div></div>
+            <div class="trend-wrap"><div class="trend-bar" style="height:81%;background:#c9a84c20;border:2px solid #c9a84c"></div><div class="trend-lbl">Dic</div></div>
+            <div class="trend-wrap"><div class="trend-bar" style="height:89%;background:#c9a84c30;border:2px solid #c9a84c"></div><div class="trend-lbl">Ene</div></div>
+            <div class="trend-wrap"><div class="trend-bar" style="height:100%;background:#c9a84c;border:2px solid #c9a84c"></div><div class="trend-lbl">Feb</div></div>
+          </div>
+          <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px;padding-top:14px;border-top:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--muted)">Mejor CPL</span><span style="font-weight:700">Meta ₲31K</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--muted)">Mayor volumen</span><span style="font-weight:700">Meta 68 leads</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--muted)">CAC promedio</span><span style="font-weight:700">₲ 269K</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Campaigns table -->
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">🗂 Campañas Activas</span>
+          <span class="roi-badge">ROI 312%</span>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Plataforma</th><th>Campaña</th><th>Objetivo</th>
+            <th>Presup/día</th><th>Inversión</th><th>Leads</th><th>Estado</th>
+          </tr></thead>
+          <tbody>
+            <tr><td><span class="plat-tag tag-meta">📘 Meta</span></td><td style="max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Abogados PY — Leads</td><td style="color:var(--muted)">Generación</td><td style="font-weight:600">₲ 70K</td><td style="font-weight:600">₲ 1.2M</td><td><b>38</b></td><td><span class="plat-status st-active" style="font-size:10px">● Activo</span></td></tr>
+            <tr><td><span class="plat-tag tag-meta">📘 Meta</span></td><td>Bufetes — Retargeting</td><td style="color:var(--muted)">Conversión</td><td style="font-weight:600">₲ 30K</td><td style="font-weight:600">₲ 900K</td><td><b>30</b></td><td><span class="plat-status st-active" style="font-size:10px">● Activo</span></td></tr>
+            <tr><td><span class="plat-tag tag-google">🔴 Google</span></td><td>abogado asuncion - Search</td><td style="color:var(--muted)">Búsqueda</td><td style="font-weight:600">₲ 50K</td><td style="font-weight:600">₲ 1.1M</td><td><b>35</b></td><td><span class="plat-status st-active" style="font-size:10px">● Activo</span></td></tr>
+            <tr><td><span class="plat-tag tag-google">🔴 Google</span></td><td>XLegal Software — Brand</td><td style="color:var(--muted)">Marca</td><td style="font-weight:600">₲ 20K</td><td style="font-weight:600">₲ 700K</td><td><b>17</b></td><td><span class="plat-status st-active" style="font-size:10px">● Activo</span></td></tr>
+            <tr><td><span class="plat-tag tag-tiktok">🎵 TikTok</span></td><td>Software Abogados PY</td><td style="color:var(--muted)">Tráfico</td><td style="font-weight:600">₲ 15K</td><td style="font-weight:600">₲ 450K</td><td><b>14</b></td><td><span class="plat-status st-active" style="font-size:10px">● Activo</span></td></tr>
+            <tr style="opacity:.6"><td><span class="plat-tag tag-linkedin">💼 LinkedIn</span></td><td>Bufetes Premium — B2B</td><td style="color:var(--muted)">Leads B2B</td><td style="font-weight:600">—</td><td style="font-weight:600">₲ 350K</td><td><b>6</b></td><td><span class="plat-status st-paused" style="font-size:10px">⏸ Pausa</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XLegal · LEXI — Asistente IA Jurídica</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--navy:#0d0d1a;--gold:#c9a84c;--bg:#0d0d1a;--purple:#7c3aed;--card:#131320;--border:#1e1e35;--text:#f0f0ff;--muted:#6b6b9a}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);min-height:100vh;display:flex;color:var(--text)}
+
+/* Sidebar (mini) */
+.sidebar{width:60px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:16px 0;flex-shrink:0}
+.s-logo{width:36px;height:36px;background:var(--gold);border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:var(--navy);margin-bottom:24px}
+.s-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:4px;cursor:pointer;transition:.15s;color:rgba(255,255,255,.3)}
+.s-icon.active{background:rgba(124,58,237,.2);color:#a78bfa}
+.s-icon:hover{background:rgba(255,255,255,.05);color:rgba(255,255,255,.7)}
+
+/* Tool Tabs */
+.tabs-panel{width:240px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.tabs-header{padding:20px;border-bottom:1px solid var(--border)}
+.tabs-title{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:#a78bfa}
+.tabs-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.tab-item{padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;border-left:3px solid transparent;transition:.15s}
+.tab-item:hover{background:rgba(255,255,255,.03)}
+.tab-item.active{background:rgba(124,58,237,.1);border-left-color:#7c3aed}
+.tab-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.tab-name{font-weight:600;font-size:13px}
+.tab-desc{font-size:10px;color:var(--muted);margin-top:1px}
+
+/* Chat area */
+.chat-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.chat-topbar{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.chat-area{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px}
+
+/* Messages */
+.msg{display:flex;gap:12px;max-width:80%}
+.msg.user{flex-direction:row-reverse;align-self:flex-end}
+.msg-av{width:36px;height:36px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px}
+.av-lexi{background:linear-gradient(135deg,#7c3aed,#4f46e5)}
+.av-user{background:var(--gold);color:var(--navy);font-family:'Syne',sans-serif;font-weight:800;font-size:13px}
+.msg-bubble{padding:12px 16px;border-radius:14px;font-size:13px;line-height:1.6}
+.bubble-lexi{background:#1a1a2e;border:1px solid var(--border);color:var(--text)}
+.bubble-user{background:#7c3aed;color:#fff}
+.msg-meta{font-size:10px;color:var(--muted);margin-top:5px}
+.msg.user .msg-meta{text-align:right}
+
+/* Tool result box */
+.result-box{background:#0e0e22;border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:8px}
+.result-section{margin-bottom:12px}
+.result-section:last-child{margin-bottom:0}
+.rs-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.rs-red{color:#f87171}.rs-blue{color:#60a5fa}.rs-green{color:#34d399}.rs-purple{color:#a78bfa}
+.rs-item{font-size:12px;color:rgba(255,255,255,.7);padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);display:flex;align-items:flex-start;gap:6px}
+.rs-item:last-child{border-bottom:none}
+.rs-bullet{flex-shrink:0;margin-top:2px}
+.copy-btn{font-size:10px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;padding:4px 10px;border-radius:6px;cursor:pointer;margin-top:10px;display:inline-flex;align-items:center;gap:4px}
+
+/* Input area */
+.chat-input-area{padding:16px 24px;border-top:1px solid var(--border);flex-shrink:0}
+.input-wrap{display:flex;gap:10px;align-items:flex-end}
+.input-box{flex:1;background:#1a1a2e;border:1.5px solid var(--border);border-radius:14px;padding:12px 16px;color:var(--text);font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;resize:none;min-height:48px;max-height:200px;line-height:1.5}
+.input-box:focus{border-color:#7c3aed}
+.send-btn{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.shortcuts{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.shortcut{padding:5px 11px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:7px;font-size:11px;color:var(--muted);cursor:pointer;transition:.15s}
+.shortcut:hover{background:rgba(124,58,237,.1);color:#a78bfa;border-color:rgba(124,58,237,.3)}
+</style>
+</head>
+<body>
+
+<!-- Mini sidebar -->
+<div class="sidebar">
+  <div class="s-logo">X</div>
+  <div class="s-icon" title="Dashboard">📊</div>
+  <div class="s-icon" title="Casos">⚖️</div>
+  <div class="s-icon" title="Clientes">👥</div>
+  <div class="s-icon active" title="LEXI IA">🤖</div>
+  <div class="s-icon" title="Documentos">📄</div>
+  <div class="s-icon" title="Plazos">⏰</div>
+  <div class="s-icon" title="Calendario">📅</div>
+</div>
+
+<!-- Tool tabs -->
+<div class="tabs-panel">
+  <div class="tabs-header">
+    <div class="tabs-title">LEXI IA</div>
+    <div class="tabs-sub">Asistente Jurídico · Paraguay</div>
+  </div>
+  <div class="tab-item active">
+    <div class="tab-ico" style="background:rgba(124,58,237,.15)">💬</div>
+    <div><div class="tab-name">Chat LEXI</div><div class="tab-desc">Consultas jurídicas</div></div>
+  </div>
+  <div class="tab-item">
+    <div class="tab-ico" style="background:rgba(239,68,68,.1)">📑</div>
+    <div><div class="tab-name">Análisis de Contrato</div><div class="tab-desc">Pegar texto para analizar</div></div>
+  </div>
+  <div class="tab-item">
+    <div class="tab-ico" style="background:rgba(59,130,246,.1)">✏️</div>
+    <div><div class="tab-name">Borrador de Documentos</div><div class="tab-desc">Demandas, contratos, cartas</div></div>
+  </div>
+  <div class="tab-item">
+    <div class="tab-ico" style="background:rgba(16,185,129,.1)">🔍</div>
+    <div><div class="tab-name">Búsqueda Legal</div><div class="tab-desc">Legislación paraguaya</div></div>
+  </div>
+  <div class="tab-item">
+    <div class="tab-ico" style="background:rgba(245,158,11,.1)">📊</div>
+    <div><div class="tab-name">Resumen de Caso</div><div class="tab-desc">Ejecutivo para clientes</div></div>
+  </div>
+</div>
+
+<!-- Chat area -->
+<div class="chat-main">
+  <div class="chat-topbar">
+    <div>
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px">Chat LEXI — Asistente Jurídico</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">⚡ Impulsado por IA · Especializado en derecho paraguayo</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button style="padding:6px 12px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:11px;cursor:pointer">🗑 Limpiar</button>
+    </div>
+  </div>
+
+  <div class="chat-area">
+    <!-- Welcome -->
+    <div class="msg">
+      <div class="msg-av av-lexi">🤖</div>
+      <div>
+        <div class="msg-bubble bubble-lexi">
+          ¡Hola! Soy <strong>LEXI</strong>, tu asistente jurídica especializada en derecho paraguayo 🇵🇾<br><br>
+          Puedo ayudarte con consultas sobre el Código Procesal Civil, Código Laboral (Ley 213/93), contratos, plazos procesales, jurisprudencia y mucho más.<br><br>
+          ¿En qué podemos trabajar hoy?
+        </div>
+        <div class="msg-meta">LEXI · 09:15</div>
+      </div>
+    </div>
+
+    <!-- User message -->
+    <div class="msg user">
+      <div class="msg-av av-user">JG</div>
+      <div>
+        <div class="msg-bubble bubble-user">
+          Necesito saber el plazo para contestar una demanda ordinaria civil y qué documentos debo adjuntar según el CPC
+        </div>
+        <div class="msg-meta">09:17</div>
+      </div>
+    </div>
+
+    <!-- LEXI response with rich result -->
+    <div class="msg">
+      <div class="msg-av av-lexi">🤖</div>
+      <div style="max-width:600px">
+        <div class="msg-bubble bubble-lexi">
+          Según el <strong>Código Procesal Civil de Paraguay (Ley 1337/88)</strong>, el plazo para contestar la demanda ordinaria es:
+        </div>
+        <div class="result-box">
+          <div class="result-section">
+            <div class="rs-title rs-blue">⏱ Plazo de Contestación</div>
+            <div class="rs-item"><span class="rs-bullet">▶</span><span><strong>18 días hábiles</strong> — CPC Art. 224, desde la notificación personal</span></div>
+            <div class="rs-item"><span class="rs-bullet">▶</span><span>Si el demandado está fuera del país: <strong>30 días</strong> (CPC Art. 225)</span></div>
+            <div class="rs-item"><span class="rs-bullet">▶</span><span>Plazo es fatal e improrrogable (CPC Art. 228)</span></div>
+          </div>
+          <div class="result-section">
+            <div class="rs-title rs-green">📎 Documentos a Adjuntar (CPC Art. 232)</div>
+            <div class="rs-item"><span class="rs-bullet">▶</span><span>Escrito de contestación firmado (original + copia)</span></div>
+            <div class="rs-item"><span class="rs-bullet">▶</span><span>Documentos habilitantes del apoderado (poder notarial si corresponde)</span></div>
+            <div class="rs-item"><span class="rs-bullet">▶</span><span>Todos los documentos en que funde su derecho</span></div>
+            <div class="rs-item"><span class="rs-bullet">▶</span><span>Ofrecimiento de pruebas (testimoniales, periciales)</span></div>
+          </div>
+          <div class="result-section">
+            <div class="rs-title rs-red">⚠️ Importante</div>
+            <div class="rs-item"><span class="rs-bullet">▶</span><span>La no contestación en plazo puede resultar en <strong>rebeldía</strong> (CPC Art. 256)</span></div>
+            <div class="rs-item"><span class="rs-bullet">▶</span><span>Presentar <strong>excepciones previas</strong> junto con la contestación si corresponde</span></div>
+          </div>
+          <button class="copy-btn">📋 Copiar respuesta</button>
+        </div>
+        <div class="msg-meta">LEXI · 09:17</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div class="chat-input-area">
+    <div class="shortcuts">
+      <div class="shortcut">¿Cuáles son los plazos de apelación?</div>
+      <div class="shortcut">Redactame un poder general</div>
+      <div class="shortcut">¿Qué dice el CPC sobre medidas cautelares?</div>
+      <div class="shortcut">Calcula indemnización laboral</div>
+    </div>
+    <div class="input-wrap">
+      <textarea class="input-box" placeholder="Escribí tu consulta jurídica…" rows="1">¿Cuáles son los requisitos para interponer una medida cautelar de embargo preventivo?</textarea>
+      <button class="send-btn">↑</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
