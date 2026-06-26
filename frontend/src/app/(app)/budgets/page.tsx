@@ -191,7 +191,7 @@ export default function BudgetsPage() {
             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
               <div><label className={lbl}>Título / Servicio *</label><input className={inp} value={form.title||''} onChange={e=>setForm({...form,title:e.target.value})} placeholder="Ej: Asesoría legal — Contrato de arrendamiento" /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className={lbl}>Monto (₲) *</label><input type="number" className={inp} value={form.amount||''} onChange={e=>setForm({...form,amount:e.target.value})} placeholder="500000" /></div>
+                <div><label className={lbl}>Monto (₲) *</label><input type="number" min="0" className={inp} value={form.amount||''} onChange={e=>setForm({...form,amount:e.target.value})} placeholder="500000" /></div>
                 <div><label className={lbl}>Válido hasta</label><input type="date" className={inp} value={form.valid_until||''} onChange={e=>setForm({...form,valid_until:e.target.value})} /></div>
               </div>
               <div><label className={lbl}>Cliente / Empresa</label><input className={inp} value={form.client_name||''} onChange={e=>setForm({...form,client_name:e.target.value})} placeholder="Nombre del cliente" /></div>

@@ -52,9 +52,9 @@ export default function FirmaPage() {
   })
 
   const resendMut = useMutation({
-    mutationFn: (id: string) => fetch(`/api/esign/${id}/resend`, { method: 'POST' }),
+    mutationFn: (id: string) => esignApi.resend(id),
     onSuccess: () => { toast.success('Recordatorio enviado'); qc.invalidateQueries({ queryKey: ['esign-list'] }) },
-    onError: () => toast.error('Error al reenviar'),
+    onError: (e: any) => toast.error(e.response?.data?.detail || 'Error al reenviar'),
   })
 
   const downloadMut = useMutation({

@@ -8,7 +8,6 @@ from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.user import User
 from app.models.billing import Invoice, InvoiceItem, InvoiceStatus, Income, Expense
-from app.models.budget import Budget
 from app.models.client import Client
 from app.models.case import Case
 import uuid
@@ -27,12 +26,19 @@ class InvoiceCreate(BaseModel):
     invoice_type: str = "B"
     timbrado: Optional[str] = None
     timbrado_expires: Optional[str] = None
-    items: List[InvoiceItemIn]
+    # Modo detallado (líneas) — opcional
+    items: Optional[List[InvoiceItemIn]] = None
+    # Modo simple (lo que envía el formulario): un monto total con IVA incluido
+    description: Optional[str] = None
+    amount: Optional[float] = None
+    vat_rate: Optional[float] = None
     due_date: Optional[str] = None
     notes: Optional[str] = None
     issued_at: Optional[str] = None
+    issue_date: Optional[str] = None  # alias del formulario
 
 def inv_to_dict(inv: Invoice) -> dict:
+    first_desc = inv.items[0].description if inv.items else (inv.notes or "")
     return {
         "id": inv.id, "number": inv.number, "invoice_type": inv.invoice_type,
         "status": inv.status if isinstance(inv.status, str) else inv.status.value,
@@ -41,7 +47,11 @@ def inv_to_dict(inv: Invoice) -> dict:
         "total": inv.total, "paid_amount": inv.paid_amount, "balance": inv.balance,
         "currency": inv.currency, "issued_at": inv.issued_at, "due_date": inv.due_date,
         "timbrado": inv.timbrado, "notes": inv.notes,
-        "client": {"id": inv.client.id, "full_name": inv.client.full_name} if inv.client else None,
+        # Alias para el frontend (lee amount / vat_rate / issue_date / description / timbrado_number)
+        "amount": inv.total, "vat_rate": inv.iva_rate, "issue_date": inv.issued_at,
+        "description": first_desc, "timbrado_number": inv.timbrado,
+        "paid_at": inv.paid_at,
+        "client": {"id": inv.client.id, "full_name": inv.client.full_name, "ruc": getattr(inv.client, "ruc", None)} if inv.client else None,
         "items": [{"description": i.description, "quantity": i.quantity, "unit_price": i.unit_price, "amount": i.amount} for i in inv.items],
         "created_at": inv.created_at.isoformat() if inv.created_at else None,
     }
@@ -60,7 +70,35 @@ async def list_invoices(
 
 @router.post("/invoices", status_code=201)
 async def create_invoice(data: InvoiceCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    # Get or create invoice counter
+    if not data.client_id:
+        raise HTTPException(422, "Debe seleccionar un cliente para la factura")
+
+    rate = data.vat_rate if data.vat_rate is not None else 10.0
+    if rate < 0:
+        raise HTTPException(422, "La tasa de IVA no puede ser negativa")
+
+    # Líneas de la factura: modo detallado o monto simple (IVA incluido)
+    line_items: list[dict] = []
+    if data.items:
+        # Modo detallado: unit_price es neto, el IVA se agrega encima
+        subtotal = sum(i.quantity * i.unit_price for i in data.items)
+        if subtotal < 0:
+            raise HTTPException(422, "El monto no puede ser negativo")
+        iva = round(subtotal * rate / 100, 2)
+        total = subtotal + iva
+        line_items = [{"description": i.description, "quantity": i.quantity,
+                       "unit_price": i.unit_price, "amount": i.quantity * i.unit_price} for i in data.items]
+    else:
+        # Modo simple: amount es el TOTAL con IVA incluido
+        total = float(data.amount or 0)
+        if total < 0:
+            raise HTTPException(422, "El monto no puede ser negativo")
+        iva = round(total * rate / (100 + rate), 2) if rate else 0.0
+        subtotal = round(total - iva, 2)
+        line_items = [{"description": data.description or "Servicios profesionales",
+                       "quantity": 1, "unit_price": subtotal, "amount": subtotal}]
+
+    # Numerador de factura por tenant
     from app.models.tenant import Tenant
     tenant_result = await db.execute(select(Tenant).where(Tenant.id == current_user.tenant_id))
     tenant = tenant_result.scalar_one_or_none()
@@ -68,30 +106,25 @@ async def create_invoice(data: InvoiceCreate, db: AsyncSession = Depends(get_db)
     if tenant:
         counter = tenant.invoice_counter
         tenant.invoice_counter = counter + 1
-
     number = f"{counter:07d}"
-    items_data = data.items
-    subtotal = sum(i.quantity * i.unit_price for i in items_data)
-    iva = subtotal * 0.10
-    total = subtotal + iva
 
     inv = Invoice(
         id=str(uuid.uuid4()), tenant_id=current_user.tenant_id,
         number=number, client_id=data.client_id, case_id=data.case_id,
         invoice_type=data.invoice_type, timbrado=data.timbrado,
         timbrado_expires=data.timbrado_expires,
-        subtotal=subtotal, iva_rate=10.0, iva_amount=iva, total=total,
+        subtotal=subtotal, iva_rate=rate, iva_amount=iva, total=total,
         balance=total, due_date=data.due_date, notes=data.notes,
-        issued_at=data.issued_at, status=InvoiceStatus.EMITIDA,
+        issued_at=(data.issued_at or data.issue_date), status=InvoiceStatus.EMITIDA,
     )
     db.add(inv)
     await db.flush()
 
-    for item in items_data:
+    for item in line_items:
         db.add(InvoiceItem(
             id=str(uuid.uuid4()), invoice_id=inv.id,
-            description=item.description, quantity=item.quantity,
-            unit_price=item.unit_price, amount=item.quantity * item.unit_price,
+            description=item["description"], quantity=item["quantity"],
+            unit_price=item["unit_price"], amount=item["amount"],
         ))
 
     await db.commit()
@@ -160,6 +193,8 @@ async def income_stats(db: AsyncSession = Depends(get_db), current_user: User = 
 
 @router.post("/income", status_code=201)
 async def create_income(data: IncomeCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if data.amount < 0:
+        raise HTTPException(422, "El monto no puede ser negativo")
     inc = Income(id=str(uuid.uuid4()), tenant_id=current_user.tenant_id, **data.model_dump())
     db.add(inc)
     await db.commit()
@@ -182,48 +217,31 @@ async def list_expenses(
 ):
     q = select(Expense).where(Expense.tenant_id == current_user.tenant_id)
     total = (await db.execute(select(func.count()).select_from(q.subquery()))).scalar() or 0
-    result = await db.execute(q.order_by(Expense.expense_date.desc()).offset((page-1)*limit).limit(limit))
+    result = await db.execute(
+        q.options(selectinload(Expense.case))
+         .order_by(Expense.expense_date.desc()).offset((page-1)*limit).limit(limit)
+    )
     items = result.scalars().all()
     def _exp_row(e):
-        d = {"id": e.id, "description": e.description, "amount": e.amount, "expense_date": e.expense_date,
-             "category": e.category, "is_reimbursable": e.is_reimbursable, "notes": e.notes,
-             "case_id": e.case_id, "payment_method": getattr(e, "payment_method", "efectivo")}
-        try:
-            import asyncio
-            d["case_title"] = None  # loaded separately if needed
-        except: pass
-        return d
+        return {"id": e.id, "description": e.description, "amount": e.amount, "expense_date": e.expense_date,
+                "category": e.category, "is_reimbursable": e.is_reimbursable, "notes": e.notes,
+                "case_id": e.case_id, "payment_method": getattr(e, "payment_method", "efectivo"),
+                "case_title": (e.case.title if e.case else None)}
     return {"items": [_exp_row(e) for e in items], "total": total}
 
 @router.post("/expenses", status_code=201)
 async def create_expense(data: ExpenseCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if data.amount < 0:
+        raise HTTPException(422, "El monto no puede ser negativo")
     exp = Expense(id=str(uuid.uuid4()), tenant_id=current_user.tenant_id, **data.model_dump())
     db.add(exp)
     await db.commit()
     return {"id": exp.id, "message": "Gasto registrado"}
 
 # ─── BUDGETS ──────────────────────────────────────────────────
-class BudgetCreate(BaseModel):
-    client_id: str
-    title: str
-    amount: float
-    case_id: Optional[str] = None
-    description: Optional[str] = None
-    valid_until: Optional[str] = None
-    notes: Optional[str] = None
-
-@router.get("/budgets")
-async def list_budgets(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(Budget).where(Budget.tenant_id == current_user.tenant_id).order_by(Budget.created_at.desc()))
-    items = result.scalars().all()
-    return {"items": [{"id": b.id, "title": b.title, "amount": b.amount, "status": b.status, "valid_until": b.valid_until} for b in items]}
-
-@router.post("/budgets", status_code=201)
-async def create_budget(data: BudgetCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    b = Budget(id=str(uuid.uuid4()), tenant_id=current_user.tenant_id, **data.model_dump())
-    db.add(b)
-    await db.commit()
-    return {"id": b.id, "message": "Presupuesto creado"}
+# Los endpoints de presupuestos viven en budgets.py (router dedicado con
+# create/list/update/delete y filtros). Se eliminaron de aquí para evitar
+# la colisión de rutas /budgets que provocaba 422 al crear presupuestos.
 
 
 @router.get("/invoices/{invoice_id}/pdf")
@@ -246,6 +264,8 @@ async def export_invoice_pdf(
     
     client_name = inv.client.full_name if inv.client else "Sin cliente"
     ruc = inv.client.ruc if inv.client else ""
+    _status_val = inv.status.value if hasattr(inv.status, "value") else inv.status
+    is_paid = _status_val in ("paid", "pagada", "cobrada")
     
     rows = ""
     for item in (inv.items or []):
@@ -270,7 +290,7 @@ async def export_invoice_pdf(
   .inv-title {{ text-align: right; }}
   .inv-title h1 {{ font-size: 24px; font-weight: 700; color: #1a1a2e; }}
   .inv-title p {{ color: #666; font-size: 13px; margin-top: 4px; }}
-  .badge {{ display: inline-block; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; background: {'#dcfce7; color: #166534' if inv.status == 'paid' else '#fef9c3; color: #854d0e'}; }}
+  .badge {{ display: inline-block; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; background: {'#dcfce7; color: #166534' if is_paid else '#fef9c3; color: #854d0e'}; }}
   .info {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }}
   .info-box {{ background: #f8f9fa; padding: 16px; border-radius: 8px; }}
   .info-box h3 {{ font-size: 11px; text-transform: uppercase; color: #999; margin-bottom: 8px; letter-spacing: 0.5px; }}
@@ -303,7 +323,7 @@ async def export_invoice_pdf(
     <h1>FACTURA</h1>
     <p>N° {inv.number or inv.id[:8].upper()}</p>
     <p>Timbrado: {getattr(inv, 'timbrado_number', None) or '—'}</p>
-    <div class="badge">{'PAGADA' if inv.status == 'paid' else 'PENDIENTE'}</div>
+    <div class="badge">{'PAGADA' if is_paid else 'PENDIENTE'}</div>
   </div>
 </div>
 

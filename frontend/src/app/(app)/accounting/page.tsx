@@ -46,7 +46,7 @@ export default function AccountingPage() {
   })
   const { data, isLoading } = useQuery({
     queryKey: ['accounting'],
-    queryFn: () => api.get('/accounting').then(r => r.data),
+    queryFn: () => api.get('/accounting/entries').then(r => r.data),
   })
 
   const allEntries: any[] = data?.entries || data?.items || []
@@ -61,7 +61,7 @@ export default function AccountingPage() {
   const egresos  = allEntries.filter((e: any) => e.account_debit?.startsWith('5')).reduce((s: number, e: any) => s + (e.amount||0), 0)
 
   const createMut = useMutation({
-    mutationFn: (d: any) => api.post('/accounting', { ...d, amount: parseFloat(d.amount) }),
+    mutationFn: (d: any) => api.post('/accounting/entries', { ...d, amount: parseFloat(d.amount) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['accounting'] })
       qc.invalidateQueries({ queryKey: ['accounting-summary'] })
@@ -71,7 +71,7 @@ export default function AccountingPage() {
     onError: () => toast.error('Error al registrar'),
   })
   const deleteMut = useMutation({
-    mutationFn: (id: string) => api.delete(`/accounting/${id}`),
+    mutationFn: (id: string) => api.delete(`/accounting/entries/${id}`),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['accounting'] }); toast.success('Asiento eliminado') },
     onError: () => toast.error('Error al eliminar'),
   })
@@ -243,7 +243,7 @@ export default function AccountingPage() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className={lbl}>Monto (₲) *</label><input type="number" className={inp} value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} placeholder="500000" /></div>
+                <div><label className={lbl}>Monto (₲) *</label><input type="number" min="0" className={inp} value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} placeholder="500000" /></div>
                 <div><label className={lbl}>Moneda</label>
                   <select className={inp} value={form.currency} onChange={e => setForm({...form, currency: e.target.value})}>
                     <option value="PYG">₲ Guaraníes (PYG)</option>

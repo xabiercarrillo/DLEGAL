@@ -3,8 +3,11 @@ XLegal — Servicio de Email
 Proveedor: Resend (https://resend.com) — transaccional y confiable en Paraguay
 Fallback: log a consola si no hay API key configurada
 """
+import logging
 import httpx
 from app.core.config import settings
+
+logger = logging.getLogger("xlegal.email")
 
 SUPPORT_PHONE = "0993397400"
 FROM_EMAIL = "XLegal <noreply@xlegal.com.py>"
@@ -13,7 +16,7 @@ FROM_EMAIL = "XLegal <noreply@xlegal.com.py>"
 async def send_email(to: str, subject: str, html: str) -> bool:
     """Envía un email vía Resend API. Retorna True si éxito."""
     if not settings.RESEND_API_KEY:
-        print(f"[EMAIL MOCK] To: {to} | Subject: {subject}")
+        logger.info("[EMAIL MOCK] To: %s | Subject: %s", to, subject)
         return True  # In dev, just log it
 
     try:
@@ -25,7 +28,7 @@ async def send_email(to: str, subject: str, html: str) -> bool:
             )
             return resp.status_code in (200, 201)
     except Exception as e:
-        print(f"[EMAIL ERROR] {e}")
+        logger.error("[EMAIL ERROR] %s", e)
         return False
 
 

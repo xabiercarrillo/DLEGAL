@@ -1,13 +1,10 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
-import { useAuthStore } from '@/store/auth'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
+import { meetingsApi } from '@/lib/api'
 import toast from 'react-hot-toast'
 import { Video, Calendar, Clock, Copy, ExternalLink, Plus, Users, CheckCircle, AlertCircle } from 'lucide-react'
-
-const API = process.env.NEXT_PUBLIC_API_URL || '/api/v1'
 
 function MeetBadge({ provider }: { provider: string }) {
   if (provider === 'zoom')
@@ -18,9 +15,7 @@ function MeetBadge({ provider }: { provider: string }) {
 }
 
 export default function ReunionesPage() {
-  const { token } = useAuthStore()
   const qc = useQueryClient()
-  const headers = { Authorization: `Bearer ${token}` }
 
   const [modal, setModal] = useState<'zoom' | 'meet' | null>(null)
   const [form, setForm] = useState({ topic: '', start_time: '', duration_minutes: 60, agenda: '', attendees: '' })
@@ -29,7 +24,7 @@ export default function ReunionesPage() {
   // Google Calendar events
   const { data: gcalData } = useQuery({
     queryKey: ['gcal_events'],
-    queryFn: () => axios.get(`${API}/meetings/google-calendar/events?days_ahead=30`, { headers }).then(r => r.data),
+    queryFn: () => meetingsApi.calendarEvents(30).then(r => r.data),
     retry: false,
   })
   const gcalEvents: any[] = gcalData?.events || []
@@ -37,19 +32,19 @@ export default function ReunionesPage() {
   // Calendly
   const { data: calendlyData } = useQuery({
     queryKey: ['calendly_events'],
-    queryFn: () => axios.get(`${API}/meetings/calendly/scheduled?days_ahead=30`, { headers }).then(r => r.data),
+    queryFn: () => meetingsApi.calendlyScheduled(30).then(r => r.data),
     retry: false,
   })
   const calendlyEvents: any[] = calendlyData?.events || []
 
   const zoomMut = useMutation({
-    mutationFn: (data: any) => axios.post(`${API}/meetings/zoom`, data, { headers }).then(r => r.data),
+    mutationFn: (data: any) => meetingsApi.createZoom(data).then(r => r.data),
     onSuccess: (data) => { setCreated(data); toast.success('Reunión Zoom creada'); qc.invalidateQueries({ queryKey: ['gcal_events'] }) },
     onError: (e: any) => toast.error(e.response?.data?.detail || 'Error al crear reunión Zoom'),
   })
 
   const meetMut = useMutation({
-    mutationFn: (data: any) => axios.post(`${API}/meetings/google-meet`, data, { headers }).then(r => r.data),
+    mutationFn: (data: any) => meetingsApi.createGoogleMeet(data).then(r => r.data),
     onSuccess: (data) => { setCreated(data); toast.success('Google Meet creado'); qc.invalidateQueries({ queryKey: ['gcal_events'] }) },
     onError: (e: any) => toast.error(e.response?.data?.detail || 'Error al crear Google Meet'),
   })

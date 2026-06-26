@@ -17,9 +17,9 @@ const PRI: Record<string, { label: string; cls: string; dot: string }> = {
 }
 
 const STATUS_TABS = [
-  { v: 'pending',     l: 'Pendientes'  },
-  { v: 'in_progress', l: 'En proceso'  },
-  { v: 'completed',   l: 'Completadas' },
+  { v: 'pendiente',   l: 'Pendientes'  },
+  { v: 'en_proceso',  l: 'En proceso'  },
+  { v: 'completada',  l: 'Completadas' },
   { v: '',            l: 'Todas'       },
 ]
 
@@ -28,7 +28,7 @@ const lbl = 'block text-[11px] font-bold text-ink-400 mb-1.5 uppercase tracking-
 
 export default function TasksPage() {
   const qc = useQueryClient()
-  const [statusFilter, setStatusFilter] = useState('pending')
+  const [statusFilter, setStatusFilter] = useState('pendiente')
   const [priorityFilter, setPriorityFilter] = useState('')
   const [modal, setModal] = useState<'create' | 'edit' | null>(null)
   const [form, setForm] = useState<any>({ ...EMPTY })
@@ -150,7 +150,7 @@ export default function TasksPage() {
           {items.map(t => {
             const days = t.due_date ? daysUntil(t.due_date) : null
             const badge = days !== null ? urgencyBadge(days) : null
-            const completed = t.status === 'completed'
+            const completed = t.status === 'completada'
             const p = PRI[t.priority] || PRI.medium
             return (
               <div key={t.id}

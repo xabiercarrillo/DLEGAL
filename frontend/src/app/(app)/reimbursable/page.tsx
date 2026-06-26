@@ -185,7 +185,7 @@ export default function ReimbursablePage() {
             <div className="p-6 space-y-4">
               <div><label className={lbl}>Descripción *</label><input className={inp} value={form.description||''} onChange={e=>setForm({...form,description:e.target.value})} placeholder="Ej: Arancel judicial — 1er Juzgado Civil" /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className={lbl}>Monto (₲) *</label><input type="number" className={inp} value={form.amount||''} onChange={e=>setForm({...form,amount:e.target.value})} placeholder="75000" /></div>
+                <div><label className={lbl}>Monto (₲) *</label><input type="number" min="0" className={inp} value={form.amount||''} onChange={e=>setForm({...form,amount:e.target.value})} placeholder="75000" /></div>
                 <div><label className={lbl}>Fecha *</label><input type="date" className={inp} value={form.expense_date||''} onChange={e=>setForm({...form,expense_date:e.target.value})} /></div>
               </div>
               <div><label className={lbl}>Categoría</label>

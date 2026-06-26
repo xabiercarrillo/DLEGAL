@@ -184,7 +184,7 @@ export default function IncomePage() {
             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
               <div><label className={lbl}>Descripción *</label><input className={inp} value={form.description||''} onChange={e=>setForm({...form,description:e.target.value})} placeholder="Ej: Honorarios por patrocinio — Caso González" /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className={lbl}>Monto (₲) *</label><input type="number" className={inp} value={form.amount||''} onChange={e=>setForm({...form,amount:e.target.value})} placeholder="500000" /></div>
+                <div><label className={lbl}>Monto (₲) *</label><input type="number" min="0" className={inp} value={form.amount||''} onChange={e=>setForm({...form,amount:e.target.value})} placeholder="500000" /></div>
                 <div><label className={lbl}>Fecha</label><input type="date" className={inp} value={form.income_date||''} onChange={e=>setForm({...form,income_date:e.target.value})} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">

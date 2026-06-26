@@ -18,6 +18,7 @@ const STATUS_MAP: Record<string,{label:string;cls:string}> = {
   sent: { label: 'Enviada', cls: 'bg-ink-900/[0.05] text-ink-600' },
   paid: { label: 'Pagada', cls: 'bg-gold-400/12 text-gold-700' },
   pagada: { label: 'Pagada', cls: 'bg-gold-400/12 text-gold-700' },
+  cobrada: { label: 'Cobrada', cls: 'bg-gold-400/12 text-gold-700' },
   vencida: { label: 'Vencida', cls: 'bg-rose-500/10 text-rose-700' },
   overdue: { label: 'Vencida', cls: 'bg-rose-500/10 text-rose-700' },
 }
@@ -58,6 +59,7 @@ export default function BillingPage() {
 
   const save = () => {
     const errs = validate({
+      client_id: { value: form.client_id, rules: [ruleRequired('Seleccioná un cliente')] },
       description: { value: form.description, rules: [ruleRequired('La descripción es requerida')] },
       amount: { value: form.amount, rules: [rulePositive('El monto debe ser mayor a 0')] },
     })
@@ -74,7 +76,8 @@ export default function BillingPage() {
   const lbl = 'block text-[11px] font-semibold text-ink-500 mb-1.5 uppercase tracking-wider'
 
   const totalPending = items.filter(i => ['issued','emitida','enviada','sent','vencida','overdue'].includes(i.status)).reduce((s:number,i:any)=>s+(i.balance||i.amount||0),0)
-  const totalMonth = items.filter(i => (i.paid_at||'').startsWith(new Date().toISOString().slice(0,7)) || (i.status==='paid'||i.status==='pagada')).reduce((s:number,i:any)=>s+(i.amount||0),0)
+  const PAID_ST = ['paid','pagada','cobrada']
+  const totalMonth = items.filter(i => (i.paid_at||'').startsWith(new Date().toISOString().slice(0,7)) || PAID_ST.includes(i.status)).reduce((s:number,i:any)=>s+(i.amount||0),0)
 
   return (
     <AppLayout title="Facturación SET">
@@ -126,7 +129,7 @@ export default function BillingPage() {
               <tbody className="divide-y divide-ink-900/[0.05]">
                 {items.map((inv: any) => {
                   const st = STATUS_MAP[inv.status] || { label: inv.status, cls: 'bg-ink-900/[0.05] text-ink-600' }
-                  const isPaid = inv.status === 'paid' || inv.status === 'pagada'
+                  const isPaid = PAID_ST.includes(inv.status)
                   return (
                     <tr key={inv.id} className="hover:bg-ink-900/[0.02] transition">
                       <td className="py-3 px-4">
@@ -195,11 +198,12 @@ export default function BillingPage() {
                 <input className={err('description')} value={form.description} onChange={e=>setField('description',e.target.value)} placeholder="Servicios profesionales — Caso XYZ"/>
                 {errors.description && <p className="mt-1 text-xs text-rose-600">{errors.description}</p>}
               </div>
-              <div><label className={lbl}>Cliente</label>
-                <select className={inp} value={form.client_id} onChange={e=>setForm({...form,client_id:e.target.value})}>
-                  <option value="">Sin cliente</option>
+              <div><label className={lbl}>Cliente *</label>
+                <select className={err('client_id')} value={form.client_id} onChange={e=>setField('client_id',e.target.value)}>
+                  <option value="">Seleccionar cliente…</option>
                   {clients.map((c:any)=><option key={c.id} value={c.id}>{c.full_name}</option>)}
                 </select>
+                {errors.client_id && <p className="mt-1 text-xs text-rose-600">{errors.client_id}</p>}
               </div>
               <div><label className={lbl}>Caso</label>
                 <select className={inp} value={form.case_id} onChange={e=>setForm({...form,case_id:e.target.value})}>

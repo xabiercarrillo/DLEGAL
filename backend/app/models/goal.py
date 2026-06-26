@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import String, Boolean, Text, Float, Enum as SAEnum
+from sqlalchemy import String, Boolean, Text, Float
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
 from app.models.base import TimestampMixin, TenantMixin
@@ -7,13 +7,16 @@ import enum
 
 class GoalType(str, enum.Enum):
     INCOME = "ingresos"; CASES = "casos"; CLIENTS = "clientes"
+    HOURS = "horas"; INVOICES = "facturas"
     BILLING = "facturacion"; CUSTOM = "personalizado"
 
 class Goal(Base, TimestampMixin, TenantMixin):
     __tablename__ = "goals"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    type: Mapped[GoalType] = mapped_column(SAEnum(GoalType), default=GoalType.INCOME)
+    # Texto libre (no enum nativo) para aceptar cualquier tipo definido en el frontend:
+    # ingresos, casos, clientes, horas, facturas, etc.
+    type: Mapped[str] = mapped_column(String(30), default="ingresos")
     title: Mapped[str] = mapped_column(String(300))
     target_value: Mapped[float] = mapped_column(Float)
     current_value: Mapped[float] = mapped_column(Float, default=0)

@@ -193,8 +193,12 @@ def _doc_to_dict(d: Document) -> dict:
         "client_id": d.client_id,
         "uploaded_by": d.uploaded_by,
         "is_public": d.is_public,
+        "shared_with_client": d.shared_with_client,
+        "document_type": d.document_type,
+        "description": d.description,
         "created_at": d.created_at.isoformat() if d.created_at else None,
-        "download_url": f"/api/v1/documents/{d.id}/download",
+        # Ruta relativa a la base de la API (el frontend la antepone con NEXT_PUBLIC_API_URL)
+        "download_url": f"/documents/{d.id}/download",
     }
 
 

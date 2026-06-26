@@ -46,6 +46,8 @@ async def create_entry(
     data: EntryCreate,
     db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user),
 ):
+    if data.amount < 0:
+        raise HTTPException(422, "El monto no puede ser negativo")
     # Auto-generate entry number
     count = (await db.execute(
         select(func.count()).select_from(AccountingEntry).where(AccountingEntry.tenant_id == current_user.tenant_id)
@@ -58,6 +60,38 @@ async def create_entry(
     db.add(e)
     await db.commit()
     return {"id": e.id, "entry_number": entry_number, "message": "Asiento creado"}
+
+
+@router.delete("/accounting/entries/{entry_id}", status_code=204)
+async def delete_entry(
+    entry_id: str,
+    db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(select(AccountingEntry).where(
+        AccountingEntry.id == entry_id, AccountingEntry.tenant_id == current_user.tenant_id
+    ))
+    e = result.scalar_one_or_none()
+    if not e:
+        raise HTTPException(404, "Asiento no encontrado")
+    await db.delete(e)
+    await db.commit()
+
+
+@router.get("/accounting/summary")
+async def accounting_summary(
+    db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user),
+):
+    """Resultado contable: ingresos (Haber cta. 4.x) menos egresos (Debe cta. 5.x)."""
+    result = await db.execute(select(AccountingEntry).where(AccountingEntry.tenant_id == current_user.tenant_id))
+    entries = result.scalars().all()
+    ingresos = sum(e.amount for e in entries if (e.account_credit or "").strip().startswith("4"))
+    egresos = sum(e.amount for e in entries if (e.account_debit or "").strip().startswith("5"))
+    return {
+        "ingresos": ingresos,
+        "egresos": egresos,
+        "resultado": ingresos - egresos,
+        "total_entries": len(entries),
+    }
 
 
 # ── Reimbursable Expenses ────────────────────────────────────────────────

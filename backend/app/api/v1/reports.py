@@ -177,3 +177,117 @@ async def export_expenses_csv(
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename=gastos_{y}.csv"}
     )
+
+
+def _csv_response(rows: list, header: list, filename: str) -> StreamingResponse:
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(header)
+    for r in rows:
+        writer.writerow(r)
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+@router.get("/export/financial-csv")
+async def export_financial_csv(
+    year: int = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Reporte Financiero: ingresos, gastos y resultado neto del año."""
+    y = year or datetime.now().year
+    tid = current_user.tenant_id
+    total_income = (await db.execute(
+        select(func.sum(Income.amount)).where(Income.tenant_id == tid, Income.income_date.startswith(str(y)))
+    )).scalar() or 0
+    total_expenses = (await db.execute(
+        select(func.sum(Expense.amount)).where(Expense.tenant_id == tid, Expense.expense_date.startswith(str(y)))
+    )).scalar() or 0
+    pending = (await db.execute(
+        select(func.sum(Invoice.balance)).where(
+            Invoice.tenant_id == tid, Invoice.status.in_(["emitida", "enviada", "vencida"])
+        )
+    )).scalar() or 0
+    rows = [
+        ["Ingresos", f"{total_income:.0f}"],
+        ["Gastos", f"{total_expenses:.0f}"],
+        ["Resultado neto", f"{(total_income - total_expenses):.0f}"],
+        ["Facturas por cobrar", f"{pending:.0f}"],
+    ]
+    return _csv_response(rows, ["Concepto", f"Monto Gs. ({y})"], f"reporte_financiero_{y}.csv")
+
+
+@router.get("/export/cases-csv")
+async def export_cases_csv(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Cartera de Casos: estado actual de todos los expedientes."""
+    result = await db.execute(
+        select(Case).where(Case.tenant_id == current_user.tenant_id, Case.is_archived == False)
+        .order_by(Case.opened_at.desc())
+    )
+    cases = result.scalars().all()
+    rows = []
+    for c in cases:
+        status = c.status.value if hasattr(c.status, "value") else c.status
+        rows.append([c.reference, c.title, c.matter, status, c.court or "", c.opened_at or "", f"{c.agreed_fee:.0f}" if c.agreed_fee else ""])
+    return _csv_response(
+        rows,
+        ["Referencia", "Caratula", "Materia", "Estado", "Juzgado", "Apertura", "Honorario Gs."],
+        "cartera_casos.csv",
+    )
+
+
+@router.get("/export/clients-csv")
+async def export_clients_csv(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Nómina de Clientes: listado completo."""
+    result = await db.execute(
+        select(Client).where(Client.tenant_id == current_user.tenant_id, Client.is_active == True)
+        .order_by(Client.full_name)
+    )
+    clients = result.scalars().all()
+    rows = [[
+        c.full_name, c.type, c.document_number or c.ruc or "",
+        c.email or "", c.phone or "", c.city or "", c.department or "",
+    ] for c in clients]
+    return _csv_response(
+        rows,
+        ["Nombre", "Tipo", "Documento", "Email", "Telefono", "Ciudad", "Departamento"],
+        "nomina_clientes.csv",
+    )
+
+
+@router.get("/export/accounting-csv")
+async def export_accounting_csv(
+    year: int = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Libro Diario: asientos contables del período."""
+    from app.models.accounting import AccountingEntry
+    y = year or datetime.now().year
+    result = await db.execute(
+        select(AccountingEntry).where(
+            AccountingEntry.tenant_id == current_user.tenant_id,
+            AccountingEntry.entry_date.startswith(str(y)),
+        ).order_by(AccountingEntry.entry_date, AccountingEntry.entry_number)
+    )
+    entries = result.scalars().all()
+    rows = [[
+        e.entry_number, e.entry_date, e.concept,
+        e.account_debit, e.account_credit, f"{e.amount:.0f}", e.currency,
+    ] for e in entries]
+    return _csv_response(
+        rows,
+        ["Asiento", "Fecha", "Concepto", "Debe", "Haber", "Monto", "Moneda"],
+        f"libro_diario_{y}.csv",
+    )

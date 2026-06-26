@@ -69,6 +69,9 @@ class Income(Base, TimestampMixin, TenantMixin):
     is_billable: Mapped[bool] = mapped_column(Boolean, default=True)
     is_billed: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    client: Mapped["Client"] = relationship("Client", foreign_keys=[client_id])
+    case: Mapped["Case"] = relationship("Case", foreign_keys=[case_id])
+
 
 class Expense(Base, TimestampMixin, TenantMixin):
     __tablename__ = "expenses"
@@ -87,3 +90,5 @@ class Expense(Base, TimestampMixin, TenantMixin):
     lawyer_id: Mapped[str | None] = mapped_column(String(36))
     is_billable: Mapped[bool] = mapped_column(Boolean, default=True)
     is_billed: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    case: Mapped["Case"] = relationship("Case", foreign_keys=[case_id])

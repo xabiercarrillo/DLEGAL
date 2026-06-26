@@ -18,6 +18,7 @@ from app.core.deps import get_current_user
 from app.core.config import settings
 from app.models.user import User
 from app.models.integration import TenantIntegration
+from app.core.crypto import decrypt_secret
 from app.services.ai_multi import (
     PARAGUAY_SYSTEM, chat_openai, chat_claude, chat_cohere,
     analyze_contract, summarize_case, draft_document, legal_search
@@ -64,7 +65,7 @@ async def _get_ai_config(db, tenant_id: str) -> tuple[str, str | None]:
         ))
         i = r.scalar_one_or_none()
         if i and (i.config or {}).get("api_key"):
-            return p, i.config["api_key"]
+            return p, decrypt_secret(i.config["api_key"])
 
     # Fall back to global config
     if settings.OPENAI_API_KEY:

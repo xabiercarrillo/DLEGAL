@@ -62,6 +62,8 @@ async def create_budget(
     data: BudgetCreate,
     db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user),
 ):
+    if data.amount < 0:
+        raise HTTPException(422, "El monto no puede ser negativo")
     b = Budget(id=str(uuid.uuid4()), tenant_id=current_user.tenant_id, **data.model_dump())
     db.add(b)
     await db.commit()

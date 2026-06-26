@@ -37,6 +37,23 @@ class PasswordChange(BaseModel):
     new_password: str
 
 
+class AdminUserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    bar_number: Optional[str] = None
+    specialties: Optional[str] = None
+    role: Optional[str] = None
+
+
+class AdminPasswordReset(BaseModel):
+    new_password: str
+
+
+def _require_admin(current_user: User):
+    if current_user.role not in (UserRole.FIRM_ADMIN, UserRole.SOLO_LAWYER, UserRole.SUPER_ADMIN):
+        raise HTTPException(403, "Solo el administrador puede gestionar usuarios")
+
+
 @router.get("/me")
 async def get_me(current_user: User = Depends(get_current_user)):
     return {
@@ -157,3 +174,57 @@ async def deactivate_user(
     user.is_active = False
     await db.commit()
     return {"message": "Usuario desactivado"}
+
+
+@router.put("/{user_id}/reset-password")
+async def admin_reset_password(
+    user_id: str,
+    data: AdminPasswordReset,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """El administrador del estudio restablece la contraseña de un miembro del equipo."""
+    _require_admin(current_user)
+    result = await db.execute(
+        select(User).where(User.id == user_id, User.tenant_id == current_user.tenant_id)
+    )
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(404, "Usuario no encontrado")
+    if len(data.new_password) < 6:
+        raise HTTPException(400, "La contraseña debe tener al menos 6 caracteres")
+    user.hashed_password = hash_password(data.new_password)
+    await db.commit()
+    return {"message": "Contraseña restablecida correctamente"}
+
+
+@router.put("/{user_id}")
+async def update_user(
+    user_id: str,
+    data: AdminUserUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """El administrador del estudio edita los datos de un miembro del equipo."""
+    _require_admin(current_user)
+    result = await db.execute(
+        select(User).where(User.id == user_id, User.tenant_id == current_user.tenant_id)
+    )
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(404, "Usuario no encontrado")
+
+    updates = data.model_dump(exclude_none=True)
+    new_role = updates.pop("role", None)
+    if new_role:
+        try:
+            role_enum = UserRole(new_role)
+        except ValueError:
+            raise HTTPException(400, "Rol inválido")
+        if role_enum == UserRole.SUPER_ADMIN and current_user.role != UserRole.SUPER_ADMIN:
+            raise HTTPException(403, "No autorizado para asignar ese rol")
+        user.role = role_enum
+    for k, v in updates.items():
+        setattr(user, k, v)
+    await db.commit()
+    return {"message": "Usuario actualizado correctamente"}

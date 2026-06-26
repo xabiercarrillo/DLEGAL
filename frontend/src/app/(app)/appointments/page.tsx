@@ -21,7 +21,7 @@ const STATUS: Record<string,{ label:string; cls:string }> = {
   cancelled:  { label:'Cancelada',  cls:'bg-rose-500/10 text-rose-700 ring-1 ring-rose-500/20' },
   no_show:    { label:'No asistió', cls:'bg-sand-100 text-ink-500 ring-1 ring-ink-900/[0.06]' },
 }
-const EMPTY = { title:'', client_id:'', scheduled_at:'', duration_minutes:60, meeting_type:'presencial', location:'', notes:'', status:'scheduled' }
+const EMPTY = { title:'', client_id:'', scheduled_at:'', duration_minutes:60, type:'presencial', location:'', notes:'', status:'scheduled' }
 const inp = 'w-full px-3.5 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm text-ink-900 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition'
 const lbl = 'block text-[11px] font-semibold text-ink-400 mb-1.5 uppercase tracking-wider'
 
@@ -82,7 +82,7 @@ export default function AppointmentsPage() {
 
   function ApptCard({ a }: { a: any }) {
     const dt  = a.scheduled_at ? new Date(a.scheduled_at) : null
-    const typ = TYPES[a.meeting_type] || TYPES.presencial
+    const typ = TYPES[a.type] || TYPES.presencial
     const st  = STATUS[a.status] || STATUS.scheduled
     const done = a.status === 'completed' || a.status === 'cancelled'
 
@@ -227,7 +227,7 @@ export default function AppointmentsPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className={lbl}>Tipo</label>
-                  <select className={inp} value={form.meeting_type||'presencial'} onChange={e=>setForm({...form,meeting_type:e.target.value})}>
+                  <select className={inp} value={form.type||'presencial'} onChange={e=>setForm({...form,type:e.target.value})}>
                     {Object.entries(TYPES).map(([v,{label}]) => <option key={v} value={v}>{label}</option>)}
                   </select>
                 </div>

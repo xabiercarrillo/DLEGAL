@@ -7,6 +7,7 @@ python-multipart==0.0.9
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 bcrypt==4.0.1          # pin: passlib 1.7.4 es incompatible con bcrypt>=4.1
+cryptography==42.0.5   # Fernet para cifrar credenciales de integraciones
 
 # ── Database ──────────────────────────────────────────────────
 sqlalchemy[asyncio]==2.0.29

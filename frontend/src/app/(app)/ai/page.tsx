@@ -108,7 +108,7 @@ export default function AIPage() {
 
   const draftMut = useMutation({
     mutationFn: ({ doc_type, context }: any) => aiApi.draftDocument(doc_type, context),
-    onSuccess: (r) => setDraftResult(r.data.draft || r.data.content || JSON.stringify(r.data, null, 2)),
+    onSuccess: (r) => setDraftResult(r.data.document || r.data.draft || r.data.content || JSON.stringify(r.data, null, 2)),
     onError: (e: any) => toast.error(e.response?.data?.detail || 'Error al redactar'),
   })
 
@@ -120,7 +120,7 @@ export default function AIPage() {
 
   const resumenMut = useMutation({
     mutationFn: (data: any) => aiApi.summarizeCase(undefined, data),
-    onSuccess: (r) => setResumenResult(r.data.summary || r.data.content || JSON.stringify(r.data, null, 2)),
+    onSuccess: (r) => setResumenResult(r.data.summary || r.data.document || r.data.content || JSON.stringify(r.data, null, 2)),
     onError: (e: any) => toast.error(e.response?.data?.detail || 'Error al resumir'),
   })
 
@@ -294,9 +294,13 @@ export default function AIPage() {
               {contratoResult.summary && (
                 <ResultBox title="Resumen general" content={contratoResult.summary} icon={Scale} />
               )}
-              {/* Fallback if API returns different structure */}
-              {!contratoResult.risks && !contratoResult.key_clauses && (
-                <ResultBox title="Análisis completo" content={JSON.stringify(contratoResult, null, 2)} icon={FileText} />
+              {/* Análisis devuelto como bloque único por el backend */}
+              {!contratoResult.risks && !contratoResult.key_clauses && !contratoResult.recommendations && !contratoResult.summary && (
+                <ResultBox
+                  title="Análisis del contrato"
+                  content={contratoResult.analysis || JSON.stringify(contratoResult, null, 2)}
+                  icon={FileText}
+                />
               )}
             </div>
           )}

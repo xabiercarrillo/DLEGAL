@@ -14,6 +14,7 @@ from app.core.deps import get_current_user
 from app.core.config import settings
 from app.models.user import User
 from app.models.integration import TenantIntegration
+from app.core.crypto import decrypt_secret
 from app.services.maps import google_maps, mapbox, get_tribunales
 
 router = APIRouter(prefix="/maps", tags=["maps"])
@@ -27,7 +28,7 @@ async def _get_maps_key(db, tenant_id: str) -> str | None:
     ))
     i = r.scalar_one_or_none()
     if i:
-        return (i.config or {}).get("api_key")
+        return decrypt_secret((i.config or {}).get("api_key"))
     return settings.GOOGLE_MAPS_API_KEY or None
 
 

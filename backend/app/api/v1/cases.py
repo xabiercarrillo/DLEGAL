@@ -23,15 +23,18 @@ class CaseCreate(BaseModel):
     client_id: str
     matter: str = "civil"
     priority: str = "medium"
+    status: Optional[str] = None
     description: Optional[str] = None
     court: Optional[str] = None
     court_file_number: Optional[str] = None
     opposing_party: Optional[str] = None
     agreed_fee: Optional[float] = None
+    notes: Optional[str] = None
     opened_at: Optional[str] = None
 
 class CaseUpdate(BaseModel):
     title: Optional[str] = None
+    client_id: Optional[str] = None
     status: Optional[str] = None
     priority: Optional[str] = None
     matter: Optional[str] = None
@@ -155,9 +158,9 @@ async def get_case_detail(case_id: str, db: AsyncSession = Depends(get_db), curr
 
     case_data = case_to_dict(case)
     case_data["hearings"] = [{
-        "id": h.id, "type": h.type, "status": h.status,
-        "scheduled_at": h.scheduled_at, "court": h.court,
-        "notes": h.notes, "result": h.result,
+        "id": h.id, "type": h.type, "hearing_type": h.type, "status": h.status,
+        "scheduled_at": h.scheduled_at, "court": h.court, "location": h.court,
+        "title": h.title, "notes": h.notes, "result": h.result,
     } for h in hearings]
     case_data["deadlines"] = [{
         "id": d.id, "title": d.title, "due_date": d.due_date,
@@ -187,7 +190,7 @@ async def create_case(data: CaseCreate, db: AsyncSession = Depends(get_db), curr
         tenant_id=current_user.tenant_id,
         reference=reference,
         lawyer_id=current_user.id,
-        **data.model_dump(),
+        **data.model_dump(exclude_none=True),
     )
     db.add(case)
     await db.commit()

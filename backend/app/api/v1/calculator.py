@@ -36,17 +36,22 @@ async def calcular_laboral(data: LaboralRequest, current_user: User = Depends(ge
 
     desglose = []
 
-    # Preaviso (Art. 87 CLab)
+    # Preaviso (Art. 87 CLab) — escala completa por antigüedad
     if data.tipo_egreso == "despido_injustificado":
         if años_trabajados < 1: preaviso_dias = 30
         elif años_trabajados < 5: preaviso_dias = 45
-        else: preaviso_dias = 60
+        elif años_trabajados < 10: preaviso_dias = 60
+        else: preaviso_dias = 90
         preaviso = salario_diario * preaviso_dias
         desglose.append({"concepto": f"Preaviso (Art. 87) — {preaviso_dias} días", "monto": preaviso})
 
-        # Indemnización (Art. 91 CLab) — 15 días/año
-        indem = salario_diario * 15 * años_trabajados
-        desglose.append({"concepto": f"Indemnización (Art. 91) — {años_trabajados:.1f} años", "monto": indem})
+        # Indemnización (Art. 91 CLab) — 15 días por año de servicio;
+        # la fracción mayor a 6 meses se computa como año completo.
+        años_completos = int(años_trabajados)
+        fraccion = años_trabajados - años_completos
+        años_indem = años_completos + (1 if fraccion > 0.5 else 0)
+        indem = salario_diario * 15 * años_indem
+        desglose.append({"concepto": f"Indemnización (Art. 91) — {años_indem} años", "monto": indem})
 
     # Vacaciones (Art. 219 CLab)
     if años_trabajados < 5: vac_dias_año = 12

@@ -8,7 +8,7 @@ class Hearing(Base, TimestampMixin, TenantMixin):
     __tablename__ = "hearings"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    case_id: Mapped[str] = mapped_column(String(36), ForeignKey("cases.id"))
+    case_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("cases.id"), nullable=True)
     lawyer_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"))
     type: Mapped[str] = mapped_column(String(50), default="ordinaria")
     status: Mapped[str] = mapped_column(String(30), default="programada")
@@ -17,6 +17,7 @@ class Hearing(Base, TimestampMixin, TenantMixin):
     duration_minutes: Mapped[int] = mapped_column(Integer, default=60)
     court: Mapped[str | None] = mapped_column(String(300))
     room: Mapped[str | None] = mapped_column(String(100))
+    judge: Mapped[str | None] = mapped_column(String(200))
     notes: Mapped[str | None] = mapped_column(Text)
     result: Mapped[str | None] = mapped_column(Text)
     google_event_id: Mapped[str | None] = mapped_column(String(200))

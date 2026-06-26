@@ -15,11 +15,13 @@ const STATUS_CLS: Record<string, string> = {
   emitida: 'bg-ink-900/[0.05] text-ink-600 border-ink-900/[0.06]',
   enviada: 'bg-ink-900/[0.05] text-ink-600 border-ink-900/[0.06]',
   vencida: 'bg-rose-500/10 text-rose-700 border-rose-600/20',
+  cobrada: 'bg-gold-400/12 text-gold-700 border-gold-600/20',
   pagada:  'bg-gold-400/12 text-gold-700 border-gold-600/20',
 }
 const STATUS_LABEL: Record<string, string> = {
-  emitida: 'Emitida', enviada: 'Enviada', vencida: 'Vencida', pagada: 'Pagada',
+  emitida: 'Emitida', enviada: 'Enviada', vencida: 'Vencida', cobrada: 'Cobrada', pagada: 'Cobrada',
 }
+const PAID_ST = ['cobrada', 'pagada', 'paid']
 
 const CONTACT_METHODS = [
   { key: 'email',    icon: Send,          label: 'Email',      cls: 'bg-ink-900/[0.04] text-ink-600 border-ink-900/[0.08] hover:bg-ink-900/[0.07]' },
@@ -59,11 +61,13 @@ export default function CollectionsPage() {
     return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
   })
 
-  const pendingAmt   = stats?.pending_amount   ?? allItems.filter(c => c.status !== 'pagada').reduce((s: number, c: any) => s + (c.amount||0), 0)
-  const overdueAmt   = stats?.overdue_amount   ?? allItems.filter(c => c.status === 'vencida').reduce((s: number, c: any) => s + (c.amount||0), 0)
+  const isPaidSt = (s: string) => PAID_ST.includes(s)
+  const balOf = (c: any) => (c.balance ?? c.total ?? c.amount ?? 0)
+  const pendingAmt   = stats?.pending_amount   ?? allItems.filter(c => !isPaidSt(c.status)).reduce((s: number, c: any) => s + balOf(c), 0)
+  const overdueAmt   = stats?.overdue_amount   ?? allItems.filter(c => c.status === 'vencida').reduce((s: number, c: any) => s + balOf(c), 0)
   const overdueCount = stats?.overdue_count    ?? allItems.filter(c => c.status === 'vencida').length
-  const collectedAmt = stats?.collected_amount ?? allItems.filter(c => c.status === 'pagada').reduce((s: number, c: any) => s + (c.amount||0), 0)
-  const collectedCount = allItems.filter(c => c.status === 'pagada').length
+  const collectedAmt = stats?.collected_amount ?? allItems.filter(c => isPaidSt(c.status)).reduce((s: number, c: any) => s + (c.total||c.amount||0), 0)
+  const collectedCount = stats?.collected_count ?? allItems.filter(c => isPaidSt(c.status)).length
 
   const reminderMut = useMutation({
     mutationFn: (id: string) => api.post(`/collections/${id}/send-reminder`),
@@ -140,7 +144,7 @@ export default function CollectionsPage() {
       {/* Filters + Sort */}
       <div className="flex flex-wrap justify-between gap-3 mb-5">
         <div className="flex flex-wrap gap-2">
-          {(['', 'emitida', 'enviada', 'vencida', 'pagada'] as const).map(s => (
+          {(['', 'emitida', 'enviada', 'vencida', 'cobrada'] as const).map(s => (
             <button key={s} onClick={() => setStatusF(s)}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold transition border ${
                 statusF === s
@@ -180,9 +184,9 @@ export default function CollectionsPage() {
             const cls = STATUS_CLS[c.status] || 'bg-ink-900/[0.05] text-ink-600 border-ink-900/[0.06]'
             const overdue = daysOverdue(c.due_date)
             const isOpen = expanded === c.id
-            const isPaid = c.status === 'pagada' || c.status === 'paid'
+            const isPaid = PAID_ST.includes(c.status)
             const paid = c.paid_amount || 0
-            const total = c.amount || c.total || 0
+            const total = c.total || c.amount || 0
             const balance = total - paid
             const paidPct = total > 0 ? Math.round((paid / total) * 100) : 0
 
@@ -303,7 +307,7 @@ export default function CollectionsPage() {
             <div className="bg-paper rounded-xl p-3 mb-4 flex justify-between text-sm">
               <div>
                 <p className="text-ink-400 text-xs">Total factura</p>
-                <p className="font-semibold text-ink-900 tnum">{formatPYG(payModal.amount || 0)}</p>
+                <p className="font-semibold text-ink-900 tnum">{formatPYG(payModal.total || payModal.amount || 0)}</p>
               </div>
               {(payModal.paid_amount || 0) > 0 && (
                 <div>
@@ -314,7 +318,7 @@ export default function CollectionsPage() {
               <div>
                 <p className="text-ink-400 text-xs">Saldo pendiente</p>
                 <p className="font-semibold text-rose-600 tnum">
-                  {formatPYG((payModal.amount || 0) - (payModal.paid_amount || 0))}
+                  {formatPYG((payModal.total || payModal.amount || 0) - (payModal.paid_amount || 0))}
                 </p>
               </div>
             </div>
@@ -328,7 +332,7 @@ export default function CollectionsPage() {
 
             <div className="grid grid-cols-4 gap-2 mb-4">
               {[25, 50, 75, 100].map(pct => (
-                <button key={pct} onClick={() => setPayAmt(String(Math.round(((payModal.amount || 0) - (payModal.paid_amount || 0)) * pct / 100)))}
+                <button key={pct} onClick={() => setPayAmt(String(Math.round(((payModal.total || payModal.amount || 0) - (payModal.paid_amount || 0)) * pct / 100)))}
                   className="py-1.5 text-xs font-semibold rounded-lg ring-1 ring-ink-900/10 hover:bg-ink-900/[0.03] hover:text-ink-900 transition text-ink-500 tnum">
                   {pct}%
                 </button>

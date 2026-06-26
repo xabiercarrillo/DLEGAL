@@ -18,6 +18,7 @@ from app.models.user import User
 from app.models.billing import Invoice, InvoiceItem
 from app.models.client import Client
 from app.models.integration import TenantIntegration
+from app.core.crypto import decrypt_secret
 from app.services.pdf_gen import generate_pdf, html_invoice, html_contract
 
 router = APIRouter(prefix="/pdf", tags=["pdf"])
@@ -33,7 +34,7 @@ async def _get_pdf_provider(db, tenant_id: str) -> tuple[str, str | None]:
         ))
         i = r.scalar_one_or_none()
         if i and (i.config or {}).get("api_key"):
-            return provider, i.config["api_key"]
+            return provider, decrypt_secret(i.config["api_key"])
     return "local", None
 
 
@@ -188,7 +189,7 @@ async def convert_docx_to_pdf_endpoint(
         TenantIntegration.is_enabled == True,
     ))
     integration = r.scalar_one_or_none()
-    api_key = (integration.config or {}).get("api_key") if integration else None
+    api_key = decrypt_secret((integration.config or {}).get("api_key")) if integration else None
     if not api_key:
         raise HTTPException(400, "CloudConvert no configurado. Ir a Integraciones → PDF → CloudConvert.")
 

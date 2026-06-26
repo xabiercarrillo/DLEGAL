@@ -16,5 +16,4 @@ class Budget(Base, TimestampMixin, TenantMixin):
     case_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("cases.id", ondelete="SET NULL"), nullable=True)
     valid_until: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     client_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    client_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

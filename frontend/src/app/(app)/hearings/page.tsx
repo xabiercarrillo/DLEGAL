@@ -25,7 +25,7 @@ const TRIBUNALES = [
   'Juzgado Laboral 1°','Juzgado de Familia','Juzgado Penal de Garantías',
   'Tribunal de Apelación Civil','Corte Suprema de Justicia',
 ]
-const EMPTY = { case_id:'', hearing_type:'oral', scheduled_at:'', location:'', judge:'', notes:'', result:'', status:'scheduled' }
+const EMPTY = { case_id:'', title:'', type:'oral', scheduled_at:'', court:'', judge:'', notes:'', result:'', status:'scheduled' }
 const inp = 'w-full px-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition'
 const lbl = 'block text-[11px] font-bold text-ink-400 mb-1.5 uppercase tracking-wider'
 
@@ -43,7 +43,7 @@ export default function HearingsPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['hearings', statusF, typeF],
-    queryFn: () => hearingsApi.list({ status: statusF||undefined, hearing_type: typeF||undefined, limit: 100 }).then(r => r.data),
+    queryFn: () => hearingsApi.list({ status: statusF||undefined, type: typeF||undefined, limit: 100 }).then(r => r.data),
   })
   const { data: casesData } = useQuery({ queryKey: ['cases-sel'], queryFn: () => casesApi.list({ limit: 200 }).then(r => r.data) })
 
@@ -73,6 +73,7 @@ export default function HearingsPage() {
   function openCreate() { setSel(null); setForm({ ...EMPTY }); setModal('create') }
   function openEdit(h: any) { setSel(h); setForm({ ...h }); setModal('edit') }
   function save() {
+    if (!form.title) return toast.error('Título requerido')
     if (!form.scheduled_at) return toast.error('Fecha requerida')
     if (modal === 'create') createMut.mutate(form)
     else updateMut.mutate({ id: selected.id, d: form })
@@ -101,7 +102,8 @@ export default function HearingsPage() {
 
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 mb-1">
-              <p className="font-semibold text-ink-900">{TYPES[h.hearing_type] || h.hearing_type || 'Audiencia'}</p>
+              <p className="font-semibold text-ink-900">{h.title || TYPES[h.type] || h.type || 'Audiencia'}</p>
+              {h.title && <span className="text-xs text-ink-400">{TYPES[h.type] || h.type}</span>}
               <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-lg font-medium ${st.cls}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />{st.label}
               </span>
@@ -113,7 +115,7 @@ export default function HearingsPage() {
             </div>
             <div className="flex flex-wrap gap-3 text-xs text-ink-400">
               {dt && <span className="flex items-center gap-1"><Clock strokeWidth={1.7} className="w-3 h-3" />{dt.toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' })}</span>}
-              {h.location && <span className="flex items-center gap-1"><MapPin strokeWidth={1.7} className="w-3 h-3 flex-shrink-0" />{h.location}</span>}
+              {h.court && <span className="flex items-center gap-1"><MapPin strokeWidth={1.7} className="w-3 h-3 flex-shrink-0" />{h.court}</span>}
               {h.judge && <span>Juez: {h.judge}</span>}
               {h.case_title && <span className="flex items-center gap-1"><FileText strokeWidth={1.7} className="w-3 h-3" />{h.case_title}</span>}
             </div>
@@ -237,6 +239,10 @@ export default function HearingsPage() {
             </div>
             <div className="overflow-y-auto p-6 space-y-4">
               <div>
+                <label className={lbl}>Título de la audiencia *</label>
+                <input className={inp} value={form.title||''} onChange={e => setForm({...form,title:e.target.value})} placeholder="Audiencia de prueba — Pérez c/ González" />
+              </div>
+              <div>
                 <label className={lbl}>Caso vinculado</label>
                 <select className={inp} value={form.case_id||''} onChange={e => setForm({...form,case_id:e.target.value})}>
                   <option value="">Sin caso asignado</option>
@@ -246,7 +252,7 @@ export default function HearingsPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={lbl}>Tipo</label>
-                  <select className={inp} value={form.hearing_type||'oral'} onChange={e => setForm({...form,hearing_type:e.target.value})}>
+                  <select className={inp} value={form.type||'oral'} onChange={e => setForm({...form,type:e.target.value})}>
                     {Object.entries(TYPES).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
                   </select>
                 </div>
@@ -263,7 +269,7 @@ export default function HearingsPage() {
               </div>
               <div>
                 <label className={lbl}>Lugar / Sala</label>
-                <input className={inp} value={form.location||''} onChange={e => setForm({...form,location:e.target.value})} placeholder="1er Juzgado Civil, Sala 3" list="tribunales-list" />
+                <input className={inp} value={form.court||''} onChange={e => setForm({...form,court:e.target.value})} placeholder="1er Juzgado Civil, Sala 3" list="tribunales-list" />
                 <datalist id="tribunales-list">{TRIBUNALES.map(t => <option key={t} value={t} />)}</datalist>
               </div>
               <div>

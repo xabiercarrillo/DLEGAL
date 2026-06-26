@@ -236,6 +236,7 @@ async def invite_client_to_portal(
     import uuid, secrets
     from app.models.client import Client
     from app.core.security import hash_password
+    from app.core.config import settings
 
     allowed = (UserRole.FIRM_ADMIN, UserRole.SOLO_LAWYER, UserRole.LAWYER, UserRole.SUPER_ADMIN)
     if current_user.role not in allowed:
@@ -284,7 +285,6 @@ async def invite_client_to_portal(
     # Send welcome email with credentials
     try:
         from app.core.email import send_welcome_email
-        from app.core.config import settings
         await send_welcome_email(
             to=client.email,
             name=portal_user.full_name,

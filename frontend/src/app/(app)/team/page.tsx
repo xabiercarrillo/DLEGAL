@@ -51,7 +51,7 @@ export default function TeamPage() {
     onError: () => toast.error('Error al desactivar'),
   })
   const pwMut = useMutation({
-    mutationFn: ({ password }: any) => usersApi.changeMyPassword({ current_password: '', new_password: password }),
+    mutationFn: ({ id, password }: any) => usersApi.resetPassword(id, password),
     onSuccess: () => { toast.success('Contraseña actualizada'); setPwModal(false); setNewPw('') },
     onError: (e: any) => toast.error(e.response?.data?.detail || 'Error'),
   })
@@ -245,7 +245,7 @@ export default function TeamPage() {
               <div className="flex gap-3">
                 <button onClick={() => {
                   if (!newPw || newPw.length < 6) return toast.error('Mínimo 6 caracteres')
-                  pwMut.mutate({ password: newPw })
+                  pwMut.mutate({ id: pwUser.id, password: newPw })
                 }} disabled={pwMut.isPending}
                   className="flex-1 py-3 bg-ink-900 text-white rounded-full font-bold text-sm hover:bg-ink-800 active:scale-[0.98] transition ease-fluid disabled:opacity-50">
                   {pwMut.isPending ? 'Guardando…' : 'Actualizar contraseña'}

@@ -7,7 +7,7 @@ POST /payments/webhook/stripe      → Webhook Stripe
 POST /payments/webhook/mercadopago → Webhook Mercado Pago
 POST /payments/webhook/bancard     → Webhook Bancard
 """
-import uuid, hmac, hashlib, json
+import uuid, hmac, hashlib, json, logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,10 +19,12 @@ from app.core.deps import get_current_user
 from app.core.config import settings
 from app.models.user import User
 from app.models.integration import PaymentTransaction, TenantIntegration
+from app.core.crypto import decrypt_config
 from app.services.payments import bancard, mercadopago, stripe, paypal
 from app.services.webhooks import dispatch_event, pusher
 
 router = APIRouter(prefix="/payments", tags=["payments"])
+logger = logging.getLogger("xlegal.payments.webhooks")
 
 
 class CheckoutRequest(BaseModel):
@@ -45,7 +47,7 @@ async def _get_cfg(db, tenant_id: str, provider: str) -> dict:
         TenantIntegration.is_enabled == True,
     ))
     i = r.scalar_one_or_none()
-    return i.config or {} if i else {}
+    return decrypt_config(i.config or {}) if i else {}
 
 
 @router.post("/checkout")
@@ -213,6 +215,68 @@ async def payments_summary(
 # ═══════════════════════════════════════════════════════════════════
 #  WEBHOOKS INBOUND (plataformas → XLegal)
 # ═══════════════════════════════════════════════════════════════════
+def _verify_mercadopago_signature(request: Request, secret: str) -> bool:
+    """
+    Verifica la firma de un webhook de Mercado Pago.
+    MP envía el header `x-signature: ts=<timestamp>,v1=<hmac>` y `x-request-id`.
+    El manifiesto firmado es: `id:<data.id>;request-id:<x-request-id>;ts:<ts>;`
+    (los campos ausentes se omiten) firmado con HMAC-SHA256 y el secreto del webhook.
+    Devuelve True si la firma es válida.
+    """
+    try:
+        x_signature = request.headers.get("x-signature", "")
+        x_request_id = request.headers.get("x-request-id", "")
+        if not x_signature:
+            return False
+        parts = {}
+        for chunk in x_signature.split(","):
+            if "=" in chunk:
+                k, v = chunk.split("=", 1)
+                parts[k.strip()] = v.strip()
+        ts = parts.get("ts", "")
+        v1 = parts.get("v1", "")
+        if not ts or not v1:
+            return False
+        # data.id viene en el query string (?data.id=...) o como ?id=...
+        data_id = request.query_params.get("data.id") or request.query_params.get("id") or ""
+        manifest = ""
+        if data_id:
+            manifest += f"id:{data_id};"
+        if x_request_id:
+            manifest += f"request-id:{x_request_id};"
+        manifest += f"ts:{ts};"
+        expected = hmac.new(secret.encode(), manifest.encode(), hashlib.sha256).hexdigest()
+        return hmac.compare_digest(expected, v1)
+    except Exception as e:
+        logger.warning("Error verificando firma Mercado Pago: %s", e)
+        return False
+
+
+def _verify_bancard_signature(request: Request, body: bytes, secret: str) -> bool:
+    """
+    Verifica la firma de un webhook de Bancard.
+    Se calcula HMAC-SHA256 del cuerpo crudo con `BANCARD_WEBHOOK_KEY` y se compara
+    contra el header de firma enviado por Bancard. Devuelve True si coincide.
+    """
+    try:
+        provided = (
+            request.headers.get("x-bancard-signature")
+            or request.headers.get("x-signature")
+            or request.headers.get("bancard-signature")
+            or ""
+        ).strip()
+        if not provided:
+            return False
+        # Algunos esquemas envían "sha256=<hex>"; normalizamos.
+        if "=" in provided and provided.lower().startswith("sha256="):
+            provided = provided.split("=", 1)[1].strip()
+        expected = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+        return hmac.compare_digest(expected, provided)
+    except Exception as e:
+        logger.warning("Error verificando firma Bancard: %s", e)
+        return False
+
+
 async def _mark_paid(db, external_id: str, provider: str, raw: dict = None):
     """Marca transacción como pagada y dispara eventos."""
     r = await db.execute(select(PaymentTransaction).where(
@@ -269,7 +333,24 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
 @router.post("/webhook/mercadopago")
 async def mercadopago_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     """Webhook Mercado Pago → IPN de pagos aprobados."""
-    body = await request.json()
+    raw = await request.body()
+
+    # Verificación de firma (anti-falsificación)
+    secret = settings.MERCADOPAGO_WEBHOOK_SECRET
+    if secret:
+        if not _verify_mercadopago_signature(request, secret):
+            logger.warning("Webhook Mercado Pago RECHAZADO: firma inválida o ausente")
+            raise HTTPException(401, "Firma inválida")
+    else:
+        logger.warning(
+            "MERCADOPAGO_WEBHOOK_SECRET no configurado: webhook procesado SIN verificar firma. "
+            "Configurar el secreto para evitar webhooks falsificados."
+        )
+
+    try:
+        body = json.loads(raw) if raw else {}
+    except Exception:
+        body = {}
     topic = body.get("topic") or body.get("type", "")
     resource_id = body.get("id") or body.get("data", {}).get("id")
 
@@ -282,7 +363,24 @@ async def mercadopago_webhook(request: Request, db: AsyncSession = Depends(get_d
 @router.post("/webhook/bancard")
 async def bancard_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     """Webhook Bancard Vpos → confirmación de pago."""
-    body = await request.json()
+    raw = await request.body()
+
+    # Verificación de firma (anti-falsificación)
+    secret = settings.BANCARD_WEBHOOK_KEY
+    if secret:
+        if not _verify_bancard_signature(request, raw, secret):
+            logger.warning("Webhook Bancard RECHAZADO: firma inválida o ausente")
+            raise HTTPException(401, "Firma inválida")
+    else:
+        logger.warning(
+            "BANCARD_WEBHOOK_KEY no configurado: webhook procesado SIN verificar firma. "
+            "Configurar la clave para evitar webhooks falsificados."
+        )
+
+    try:
+        body = json.loads(raw) if raw else {}
+    except Exception:
+        body = {}
     op = body.get("operation", {})
     shop_process_id = op.get("shop_process_id")
     resp_code = op.get("response_code", "")

@@ -59,6 +59,19 @@ export default function TemplatesPage() {
     else if (editing) updateMut.mutate({ id: editing.id, d: form })
   }
 
+  // Abre el modal de edición cargando el contenido completo del modelo
+  const openEdit = async (t: any) => {
+    setEditing(t)
+    setForm({ title: t.title, category: t.category, area: t.area, description: t.description || '', content: t.content || '' })
+    setModal('edit')
+    if (!t.content) {
+      try {
+        const full = await templatesApi.get(t.id).then(r => r.data)
+        setForm((f: any) => ({ ...f, content: full.content || '' }))
+      } catch { toast.error('No se pudo cargar el contenido del modelo') }
+    }
+  }
+
   const copyContent = (content: string) => { navigator.clipboard.writeText(content); toast.success('Copiado al portapapeles') }
 
   const inp = 'w-full px-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition'
@@ -105,7 +118,7 @@ export default function TemplatesPage() {
                   <button onClick={() => setSelected(t)} title="Ver" className="p-1.5 hover:bg-ink-900/5 rounded-lg transition"><Eye strokeWidth={1.7} className="w-3.5 h-3.5 text-ink-500" /></button>
                   {t.is_own !== false && (
                     <>
-                      <button onClick={() => { setForm({ title: t.title, category: t.category, area: t.area, description: t.description||'', content: '' }); setEditing(t); setModal('edit') }} title="Editar"
+                      <button onClick={() => openEdit(t)} title="Editar"
                         className="p-1.5 hover:bg-ink-900/5 rounded-lg transition"><Edit strokeWidth={1.7} className="w-3.5 h-3.5 text-ink-500" /></button>
                       <button onClick={() => deleteMut.mutate(t.id)} title="Eliminar" className="p-1.5 hover:bg-rose-500/10 rounded-lg transition"><Trash2 strokeWidth={1.7} className="w-3.5 h-3.5 text-rose-500" /></button>
                     </>

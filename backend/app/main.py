@@ -14,9 +14,17 @@ Integraciones v2:
   Mapas:      Google Maps | Mapbox
   RT:         Pusher | Webhooks outbound (Zapier/Make/n8n)
 """
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
+
+# ── Logging estructurado básico ───────────────────────────
+logging.basicConfig(
+    level=logging.DEBUG if settings.DEBUG else logging.INFO,
+    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+)
+logger = logging.getLogger("xlegal")
 
 app = FastAPI(
     title="XLegal API",
@@ -110,8 +118,35 @@ async def root():
 
 @app.get("/health")
 async def health():
+    # Verifica DB y Redis sin romper si alguno falla (status "degraded").
+    db_status = "ok"
+    redis_status = "ok"
+
+    try:
+        from sqlalchemy import text
+        from app.core.database import engine
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+    except Exception as e:
+        db_status = "error"
+        logger.warning("Healthcheck DB falló: %s", e)
+
+    try:
+        import redis.asyncio as aioredis
+        client = aioredis.from_url(settings.REDIS_URL)
+        try:
+            await client.ping()
+        finally:
+            await client.aclose()
+    except Exception as e:
+        redis_status = "error"
+        logger.warning("Healthcheck Redis falló: %s", e)
+
+    overall = "ok" if db_status == "ok" and redis_status == "ok" else "degraded"
+
     return {
-        "status": "ok",
+        "status": overall,
+        "checks": {"database": db_status, "redis": redis_status},
         "version": settings.APP_VERSION,
         "country": "Paraguay 🇵🇾",
         "integrations": {
@@ -131,6 +166,9 @@ async def health():
 
 @app.on_event("startup")
 async def startup_event():
+    # Advertir (sin abortar) si hay defaults inseguros en producción.
+    settings.warn_insecure_defaults()
+
     from app.core.database import engine, Base
     from app.models import (
         user, tenant, case, client, hearing, deadline,

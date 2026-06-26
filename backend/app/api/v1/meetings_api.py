@@ -18,6 +18,7 @@ from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.user import User
 from app.models.integration import TenantIntegration
+from app.core.crypto import decrypt_config
 from app.services.calendar_sync import google_calendar, zoom, calendly
 
 router = APIRouter(prefix="/meetings", tags=["meetings"])
@@ -58,7 +59,7 @@ async def create_zoom_meeting(
 ):
     """Crea reunión Zoom y retorna join_url para compartir con el cliente."""
     integration = await _get_int(db, current_user.tenant_id, "zoom")
-    cfg = integration.config or {} if integration else {}
+    cfg = decrypt_config(integration.config or {}) if integration else {}
 
     result = await zoom.create_meeting(
         topic=data.topic,
@@ -103,7 +104,7 @@ async def cancel_zoom_meeting(
 ):
     """Cancela una reunión Zoom."""
     integration = await _get_int(db, current_user.tenant_id, "zoom")
-    cfg = integration.config or {} if integration else {}
+    cfg = decrypt_config(integration.config or {}) if integration else {}
     ok = await zoom.delete_meeting(meeting_id, account_id=cfg.get("account_id"),
                                    client_id=cfg.get("client_id"), client_secret=cfg.get("client_secret"))
     if not ok:

@@ -289,8 +289,8 @@ export default function DashboardPage() {
                         {h.court && <span className="truncate">{h.court}</span>}
                       </div>
                     </div>
-                    {h.hearing_type && (
-                      <span className="text-xs bg-gold-400/12 text-gold-700 px-2 py-0.5 rounded-lg font-medium flex-shrink-0 capitalize">{h.hearing_type}</span>
+                    {(h.hearing_type || h.type) && (
+                      <span className="text-xs bg-gold-400/12 text-gold-700 px-2 py-0.5 rounded-lg font-medium flex-shrink-0 capitalize">{h.hearing_type || h.type}</span>
                     )}
                   </div>
                 )
@@ -329,8 +329,8 @@ export default function DashboardPage() {
                         {a.client_name && <span className="flex items-center gap-1"><Users className="w-3 h-3" />{a.client_name}</span>}
                       </div>
                     </div>
-                    {a.meeting_type && (
-                      <span className="text-xs px-2 py-0.5 rounded-lg font-medium flex-shrink-0 capitalize bg-ink-900/[0.05] text-ink-500">{a.meeting_type}</span>
+                    {(a.meeting_type || a.type) && (
+                      <span className="text-xs px-2 py-0.5 rounded-lg font-medium flex-shrink-0 capitalize bg-ink-900/[0.05] text-ink-500">{a.meeting_type || a.type}</span>
                     )}
                   </div>
                 )

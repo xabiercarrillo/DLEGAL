@@ -33,10 +33,14 @@ async def seed():
         print("🌱 Iniciando seed XLegal Paraguay...")
         now = datetime.now(timezone.utc)
 
-        # ── SUPER ADMIN (sin tenant — acceso global) ──────────────────────
+        # ── DEMO TENANT id (el super admin opera este estudio además del acceso global) ──
+        demo_schema = "t_demo_xlegal_001"
+        demo_tenant_id = str(uuid.uuid4())
+
+        # ── SUPER ADMIN (acceso global + opera el estudio demo) ───────────
         super_admin = User(
             id=str(uuid.uuid4()),
-            tenant_id=None,
+            tenant_id=demo_tenant_id,
             email=SUPER_ADMIN_EMAIL,
             hashed_password=hash_password("XLegal"),
             full_name="Super Admin XLegal",
@@ -47,8 +51,6 @@ async def seed():
         print(f"  ✅ Super Admin: {SUPER_ADMIN_EMAIL} / XLegal")
 
         # ── DEMO TENANT ───────────────────────────────────────────────────
-        demo_schema = "t_demo_xlegal_001"
-        demo_tenant_id = str(uuid.uuid4())
         demo_tenant = Tenant(
             id=demo_tenant_id,
             name="Estudio Jurídico XLegal Demo",

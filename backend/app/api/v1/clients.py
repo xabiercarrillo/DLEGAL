@@ -16,8 +16,10 @@ router = APIRouter(prefix="/clients", tags=["clients"])
 class ClientCreate(BaseModel):
     full_name: str
     type: str = "individual"
+    client_type: Optional[str] = None   # alias usado por el frontend → se mapea a `type`
     document_type: str = "ci"
     document_number: Optional[str] = None
+    ci: Optional[str] = None             # alias usado por el frontend → se mapea a `document_number`
     ruc: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
@@ -32,8 +34,9 @@ class ClientUpdate(ClientCreate):
 
 def client_to_dict(c: Client) -> dict:
     return {
-        "id": c.id, "type": c.type, "full_name": c.full_name,
+        "id": c.id, "type": c.type, "client_type": c.type, "full_name": c.full_name,
         "document_type": c.document_type, "document_number": c.document_number,
+        "ci": c.document_number,
         "ruc": c.ruc, "email": c.email, "phone": c.phone, "whatsapp": c.whatsapp,
         "address": c.address, "city": c.city, "department": c.department,
         "notes": c.notes, "is_active": c.is_active,
@@ -64,9 +67,20 @@ async def get_client(client_id: str, db: AsyncSession = Depends(get_db), current
     if not c: raise HTTPException(404, "Cliente no encontrado")
     return client_to_dict(c)
 
+def _map_client_aliases(payload: dict) -> dict:
+    """Traduce los alias del frontend (client_type, ci) a columnas reales del modelo."""
+    ct = payload.pop("client_type", None)
+    if ct is not None:
+        payload["type"] = ct
+    ci = payload.pop("ci", None)
+    if ci is not None:
+        payload["document_number"] = ci
+    return payload
+
 @router.post("", status_code=201)
 async def create_client(data: ClientCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    client = Client(id=str(uuid.uuid4()), tenant_id=current_user.tenant_id, **data.model_dump())
+    payload = _map_client_aliases(data.model_dump(exclude_none=True))
+    client = Client(id=str(uuid.uuid4()), tenant_id=current_user.tenant_id, **payload)
     db.add(client)
     await db.commit()
     return {"id": client.id, "message": "Cliente creado"}
@@ -76,7 +90,7 @@ async def update_client(client_id: str, data: ClientUpdate, db: AsyncSession = D
     result = await db.execute(select(Client).where(Client.id == client_id, Client.tenant_id == current_user.tenant_id))
     c = result.scalar_one_or_none()
     if not c: raise HTTPException(404, "Cliente no encontrado")
-    for k, v in data.model_dump(exclude_none=True).items():
+    for k, v in _map_client_aliases(data.model_dump(exclude_none=True)).items():
         setattr(c, k, v)
     await db.commit()
     return {"message": "Actualizado"}
@@ -113,7 +127,8 @@ async def get_client_detail(client_id: str, db: AsyncSession = Depends(get_db), 
     client_data = {
         "id": client.id, "full_name": client.full_name,
         "client_type": client.client_type if hasattr(client, "client_type") else client.type,
-        "email": client.email, "phone": client.phone, "ruc": client.ruc, 
+        "ci": client.document_number,
+        "email": client.email, "phone": client.phone, "ruc": client.ruc,
         "city": client.city, "address": client.address, "notes": client.notes,
         "is_active": client.is_active, "created_at": client.created_at.isoformat() if client.created_at else None,
         "cases": [{

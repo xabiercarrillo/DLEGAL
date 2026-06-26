@@ -103,11 +103,29 @@ export default function ReportsPage() {
     color: STATUS_COLORS[d.status] || '#968d76',
   }))
 
+  // Descarga autenticada (los endpoints requieren Bearer token)
+  async function downloadFile(path: string, filename: string) {
+    try {
+      const res = await fetch(`${API_URL}${path}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      if (!res.ok) throw new Error(String(res.status))
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch {
+      alert('No se pudo descargar el archivo')
+    }
+  }
+
   function exportCSV(type: 'income' | 'expenses') {
-    const url = `${API_URL}/reports/export/${type}-csv?year=${year}`
-    const a = document.createElement('a')
-    a.href = url
-    a.click()
+    downloadFile(`/reports/export/${type}-csv?year=${year}`, `${type === 'income' ? 'ingresos' : 'gastos'}_${year}.csv`)
   }
 
   return (
@@ -210,13 +228,13 @@ export default function ReportsPage() {
         </h3>
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
           {[
-            { label: 'Reporte Financiero', desc: 'Ingresos y gastos del año', url: '/reports/financial?format=pdf' },
-            { label: 'Cartera de Casos', desc: 'Estado actual de todos los casos', url: '/reports/cases?format=pdf' },
-            { label: 'Libro Diario', desc: 'Asientos contables del período', url: '/accounting/export?format=csv' },
-            { label: 'Nómina de Clientes', desc: 'Listado completo de clientes', url: '/clients/export?format=csv' },
+            { label: 'Reporte Financiero', desc: 'Ingresos y gastos del año', path: `/reports/export/financial-csv?year=${year}`, file: `reporte_financiero_${year}.csv` },
+            { label: 'Cartera de Casos', desc: 'Estado actual de todos los casos', path: '/reports/export/cases-csv', file: 'cartera_casos.csv' },
+            { label: 'Libro Diario', desc: 'Asientos contables del período', path: `/reports/export/accounting-csv?year=${year}`, file: `libro_diario_${year}.csv` },
+            { label: 'Nómina de Clientes', desc: 'Listado completo de clientes', path: '/reports/export/clients-csv', file: 'nomina_clientes.csv' },
           ].map((r, i) => (
-            <a key={i} href={`${API_URL}${r.url}`} target="_blank" rel="noopener noreferrer"
-              className="flex items-start gap-3 p-3 rounded-xl ring-1 ring-ink-900/[0.06] hover:bg-ink-900/[0.03] transition group">
+            <button key={i} onClick={() => downloadFile(r.path, r.file)}
+              className="flex items-start gap-3 p-3 rounded-xl ring-1 ring-ink-900/[0.06] hover:bg-ink-900/[0.03] transition group text-left">
               <div className="w-8 h-8 rounded-lg bg-ink-900/5 group-hover:bg-gold-400/10 flex items-center justify-center flex-shrink-0 transition">
                 <Download className="w-4 h-4 text-ink-400 group-hover:text-gold-600" strokeWidth={1.7} />
               </div>
@@ -224,7 +242,7 @@ export default function ReportsPage() {
                 <p className="text-sm font-semibold text-ink-900">{r.label}</p>
                 <p className="text-xs text-ink-400">{r.desc}</p>
               </div>
-            </a>
+            </button>
           ))}
         </div>
       </div>

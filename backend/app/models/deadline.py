@@ -15,6 +15,7 @@ class Deadline(Base, TimestampMixin, TenantMixin):
     type: Mapped[str] = mapped_column(String(50), default="procesal")
     priority: Mapped[str] = mapped_column(String(20), default="medium")
     due_date: Mapped[str] = mapped_column(String(20), index=True)
+    legal_basis: Mapped[str | None] = mapped_column(String(300))
     is_completed: Mapped[bool] = mapped_column(Boolean, default=False)
     completed_at: Mapped[str | None] = mapped_column(String(50))
 

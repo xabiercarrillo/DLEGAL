@@ -17,11 +17,19 @@ class AppointmentCreate(BaseModel):
     scheduled_at: str
     client_id: Optional[str] = None
     case_id: Optional[str] = None
-    type: str = "consulta_inicial"
+    type: str = "presencial"
+    status: str = "scheduled"
     duration_minutes: int = 60
     location: Optional[str] = None
     fee: Optional[float] = None
     notes: Optional[str] = None
+
+
+def _clean_fks(payload: dict, *fields: str) -> dict:
+    for f in fields:
+        if payload.get(f) == "":
+            payload[f] = None
+    return payload
 
 
 class AppointmentUpdate(BaseModel):
@@ -74,7 +82,7 @@ async def create_appointment(
         id=str(uuid.uuid4()),
         tenant_id=current_user.tenant_id,
         lawyer_id=current_user.id,
-        **data.model_dump(),
+        **_clean_fks(data.model_dump(), "client_id", "case_id"),
     )
     db.add(a)
     await db.commit()
@@ -94,7 +102,7 @@ async def update_appointment(
     a = result.scalar_one_or_none()
     if not a:
         raise HTTPException(404, "Cita no encontrada")
-    for k, v in data.model_dump(exclude_none=True).items():
+    for k, v in _clean_fks(data.model_dump(exclude_none=True), "client_id", "case_id").items():
         setattr(a, k, v)
     await db.commit()
     return {"message": "Cita actualizada"}

@@ -45,8 +45,8 @@ export default function DeadlinesPage() {
   const { data: casesData } = useQuery({ queryKey: ['cases-sel'], queryFn: () => casesApi.list({ limit: 200 }).then(r => r.data) })
 
   const items: any[] = (data?.items || data || []).sort((a: any, b: any) => {
-    if (a.status === 'completed' && b.status !== 'completed') return 1
-    if (b.status === 'completed' && a.status !== 'completed') return -1
+    if (a.is_completed && !b.is_completed) return 1
+    if (b.is_completed && !a.is_completed) return -1
     return (a.due_date || '').localeCompare(b.due_date || '')
   })
   const cases: any[] = casesData?.items || casesData || []
@@ -63,7 +63,7 @@ export default function DeadlinesPage() {
   })
 
   // Stats
-  const pending    = items.filter(d => d.status !== 'completed')
+  const pending    = items.filter(d => !d.is_completed)
   const overdue    = pending.filter(d => d.due_date && daysUntil(d.due_date) < 0)
   const today      = pending.filter(d => d.due_date && daysUntil(d.due_date) === 0)
   const thisWeek   = pending.filter(d => d.due_date && daysUntil(d.due_date) > 0 && daysUntil(d.due_date) <= 7)
@@ -82,7 +82,7 @@ export default function DeadlinesPage() {
   }
 
   function DeadlineRow({ d }: { d: any }) {
-    const done  = d.status === 'completed'
+    const done  = d.is_completed
     const days  = d.due_date ? daysUntil(d.due_date) : null
     const badge = days !== null ? urgencyBadge(days) : null
     const pr    = PRIORITY[d.priority] || PRIORITY.medium

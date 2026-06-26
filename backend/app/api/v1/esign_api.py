@@ -19,6 +19,7 @@ from app.core.database import get_db
 from app.core.deps import get_current_user
 from app.models.user import User
 from app.models.integration import ESignRequest, TenantIntegration
+from app.core.crypto import decrypt_secret
 from app.models.document import Document
 from app.services.esign import pandadoc, docusign
 from app.services.notifications import notify_document_signed
@@ -53,6 +54,31 @@ class ESignSendFromPDF(BaseModel):
     case_id: Optional[str] = None
 
 
+# Mapea estados específicos del proveedor a estados canónicos del frontend
+_STATUS_NORMALIZE = {
+    "document.draft": "pending",
+    "document.uploaded": "pending",
+    "document.sent": "sent",
+    "document.viewed": "viewed",
+    "document.waiting_approval": "viewed",
+    "document.completed": "completed",
+    "document.declined": "declined",
+    "document.voided": "voided",
+    "document.expired": "expired",
+    "sent": "sent",
+    "delivered": "viewed",
+    "completed": "completed",
+    "declined": "declined",
+    "voided": "voided",
+}
+
+
+def _norm_status(s: str | None) -> str:
+    if not s:
+        return "pending"
+    return _STATUS_NORMALIZE.get(s, s)
+
+
 async def _get_tenant_integration(db, tenant_id: str, provider: str) -> TenantIntegration | None:
     r = await db.execute(select(TenantIntegration).where(
         TenantIntegration.tenant_id == tenant_id,
@@ -83,7 +109,7 @@ async def send_for_signature(
     integration = await _get_tenant_integration(db, current_user.tenant_id, data.provider)
     api_key = None
     if integration:
-        api_key = (integration.config or {}).get("api_key")
+        api_key = decrypt_secret((integration.config or {}).get("api_key"))
 
     # Send based on provider
     result = {"success": False, "error": "Proveedor no configurado"}
@@ -169,7 +195,7 @@ async def list_esign_requests(
         "document_id": i.document_id,
         "provider": i.provider,
         "external_id": i.external_id,
-        "status": i.status,
+        "status": _norm_status(i.status),
         "signers": json.loads(i.signers or "[]"),
         "expires_at": i.expires_at,
         "completed_at": i.completed_at,
@@ -194,7 +220,7 @@ async def get_esign_status(
 
     # Query provider for live status
     integration = await _get_tenant_integration(db, current_user.tenant_id, esign.provider)
-    api_key = (integration.config or {}).get("api_key") if integration else None
+    api_key = decrypt_secret((integration.config or {}).get("api_key")) if integration else None
 
     live_status = {}
     if esign.provider == "pandadoc" and esign.external_id:
@@ -208,7 +234,7 @@ async def get_esign_status(
 
     return {
         "id": esign_id,
-        "status": esign.status,
+        "status": _norm_status(esign.status),
         "external_id": esign.external_id,
         "provider": esign.provider,
         "signers": json.loads(esign.signers or "[]"),
@@ -236,7 +262,7 @@ async def get_signing_url(
         raise HTTPException(400, "El documento aún no fue enviado al proveedor")
 
     integration = await _get_tenant_integration(db, current_user.tenant_id, esign.provider)
-    api_key = (integration.config or {}).get("api_key") if integration else None
+    api_key = decrypt_secret((integration.config or {}).get("api_key")) if integration else None
 
     if esign.provider == "pandadoc":
         result = await pandadoc.get_signing_url(esign.external_id, signer_email, api_key=api_key)
@@ -245,6 +271,37 @@ async def get_signing_url(
         raise HTTPException(400, result.get("error", "No se pudo generar URL de firma"))
 
     raise HTTPException(400, f"URL de firma directa no disponible para {esign.provider}")
+
+
+@router.post("/{esign_id}/resend")
+async def resend_esign_request(
+    esign_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Reenvía el recordatorio de firma a los firmantes pendientes."""
+    r = await db.execute(select(ESignRequest).where(
+        ESignRequest.id == esign_id,
+        ESignRequest.tenant_id == current_user.tenant_id,
+    ))
+    esign = r.scalar_one_or_none()
+    if not esign:
+        raise HTTPException(404, "Solicitud no encontrada")
+    if not esign.external_id:
+        raise HTTPException(400, "El documento aún no fue enviado al proveedor")
+
+    integration = await _get_tenant_integration(db, current_user.tenant_id, esign.provider)
+    api_key = decrypt_secret((integration.config or {}).get("api_key")) if integration else None
+
+    if esign.provider == "pandadoc":
+        result = await pandadoc.send_document(
+            esign.external_id, "Recordatorio: tenés un documento pendiente de firma.", api_key=api_key
+        )
+        if not result.get("success"):
+            raise HTTPException(400, result.get("error", "No se pudo reenviar el recordatorio"))
+        return {"message": "Recordatorio reenviado a los firmantes"}
+
+    raise HTTPException(400, f"Reenvío no disponible para {esign.provider}")
 
 
 @router.get("/{esign_id}/download")
@@ -266,7 +323,7 @@ async def download_signed_document(
         raise HTTPException(400, f"Documento no completado aún (estado: {esign.status})")
 
     integration = await _get_tenant_integration(db, current_user.tenant_id, esign.provider)
-    api_key = (integration.config or {}).get("api_key") if integration else None
+    api_key = decrypt_secret((integration.config or {}).get("api_key")) if integration else None
 
     pdf_bytes = None
     if esign.provider == "pandadoc":

@@ -18,7 +18,7 @@ const TYPE_LABELS: Record<string,string> = {
   juez:'Juez', secretario:'Secretario/a', abogado:'Abogado/a', notario:'Notario/a',
   perito:'Perito', mediador:'Mediador/a', funcionario:'Funcionario', otro:'Otro',
 }
-const EMPTY = { full_name:'', contact_type:'juez', institution:'', position:'', phone:'', email:'', city:'Asunción', notes:'' }
+const EMPTY = { name:'', type:'juez', court:'', specialty:'', phone:'', email:'', address:'Asunción', notes:'' }
 const inp = 'w-full px-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition'
 const lbl = 'block text-[11px] font-bold text-ink-400 mb-1.5 uppercase tracking-wider'
 
@@ -40,7 +40,7 @@ export default function ContactsPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['contacts', search, typeF],
-    queryFn: () => contactsApi.list({ search, contact_type: typeF||undefined, limit: 100 }).then(r => r.data),
+    queryFn: () => contactsApi.list({ search, type: typeF||undefined, limit: 100 }).then(r => r.data),
   })
   const items: any[] = data?.items || data || []
   const favs  = items.filter(c => c.is_favorite)
@@ -70,7 +70,7 @@ export default function ContactsPage() {
   function openEdit(c: any) { setForm({ ...c }); setSel(c); setErrors({}); setModal('edit') }
   function save() {
     const errs = validate({
-      full_name: { value: form.full_name, rules: [ruleRequired('El nombre es requerido')] },
+      name: { value: form.name, rules: [ruleRequired('El nombre es requerido')] },
       email: { value: form.email, rules: [ruleEmailOptional()] },
       phone: { value: form.phone, rules: [rulePhoneOptional()] },
     })
@@ -85,22 +85,22 @@ export default function ContactsPage() {
       <div className="bg-white rounded-2xl p-4 ring-1 ring-ink-900/[0.06] shadow-tinted-sm hover:shadow-tinted-lg hover:-translate-y-0.5 transition-all duration-300 ease-fluid group">
         <div className="flex items-start gap-3">
           <div className="w-11 h-11 rounded-2xl bg-ink-900/[0.06] flex items-center justify-center flex-shrink-0 font-bold text-ink-600 text-sm">
-            {c.full_name?.split(' ').slice(0,2).map((n:string)=>n[0]?.toUpperCase()).join('') || '?'}
+            {c.name?.split(' ').slice(0,2).map((n:string)=>n[0]?.toUpperCase()).join('') || '?'}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 mb-0.5">
-              <p className="font-bold text-ink-900 truncate text-sm">{c.full_name}</p>
+              <p className="font-bold text-ink-900 truncate text-sm">{c.name}</p>
               <button onClick={() => favMut.mutate(c.id)} className="flex-shrink-0 ml-auto">
                 <Star className={`w-3.5 h-3.5 transition ${c.is_favorite ? 'fill-gold-400 text-gold-400' : 'text-ink-200 hover:text-gold-300'}`} />
               </button>
             </div>
-            <span className={`inline-flex text-xs px-2 py-0.5 rounded-lg font-semibold mb-1.5 ${TYPE_COLORS[c.contact_type]||'bg-ink-900/[0.05] text-ink-500'}`}>
-              {TYPE_LABELS[c.contact_type] || c.contact_type}
+            <span className={`inline-flex text-xs px-2 py-0.5 rounded-lg font-semibold mb-1.5 ${TYPE_COLORS[c.type]||'bg-ink-900/[0.05] text-ink-500'}`}>
+              {TYPE_LABELS[c.type] || c.type}
             </span>
-            {(c.institution || c.position) && (
-              <p className="text-xs text-ink-400 truncate flex items-center gap-1"><Briefcase strokeWidth={1.7} className="w-3 h-3 flex-shrink-0" />{[c.position, c.institution].filter(Boolean).join(' — ')}</p>
+            {(c.court || c.specialty) && (
+              <p className="text-xs text-ink-400 truncate flex items-center gap-1"><Briefcase strokeWidth={1.7} className="w-3 h-3 flex-shrink-0" />{[c.specialty, c.court].filter(Boolean).join(' — ')}</p>
             )}
-            {c.city && <p className="text-xs text-ink-400 flex items-center gap-1 mt-0.5"><MapPin strokeWidth={1.7} className="w-3 h-3" />{c.city}</p>}
+            {c.address && <p className="text-xs text-ink-400 flex items-center gap-1 mt-0.5"><MapPin strokeWidth={1.7} className="w-3 h-3" />{c.address}</p>}
             <div className="flex items-center gap-3 mt-2">
               {c.phone && <a href={`tel:${c.phone}`} className="text-xs text-ink-500 hover:text-ink-900 flex items-center gap-1 transition"><Phone strokeWidth={1.7} className="w-3 h-3" />{c.phone}</a>}
               {c.email && <a href={`mailto:${c.email}`} className="text-xs text-ink-500 hover:text-ink-900 flex items-center gap-1 truncate max-w-[140px] transition"><Mail strokeWidth={1.7} className="w-3 h-3 flex-shrink-0" />{c.email}</a>}
@@ -118,7 +118,7 @@ export default function ContactsPage() {
               <Phone strokeWidth={1.7} className="w-3.5 h-3.5" />WhatsApp
             </a>
           )}
-          <button onClick={() => { if (confirm(`¿Eliminar a ${c.full_name}?`)) deleteMut.mutate(c.id) }}
+          <button onClick={() => { if (confirm(`¿Eliminar a ${c.name}?`)) deleteMut.mutate(c.id) }}
             className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs text-ink-400 hover:text-rose-600 hover:bg-rose-500/10 rounded-xl transition">
             <Trash2 strokeWidth={1.7} className="w-3.5 h-3.5" />Eliminar
           </button>
@@ -183,17 +183,17 @@ export default function ContactsPage() {
               <button onClick={() => setModal(null)} className="p-2 rounded-xl hover:bg-white/10 text-white/60 transition"><X strokeWidth={1.7} className="w-4 h-4" /></button>
             </div>
             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-              <div><label className={lbl}>Nombre completo *</label><input className={fieldCls('full_name')} value={form.full_name||''} onChange={e=>setField('full_name',e.target.value)} placeholder="Dr. Roberto Díaz Alonso" />{errors.full_name && <p className="mt-1 text-xs text-rose-600">{errors.full_name}</p>}</div>
+              <div><label className={lbl}>Nombre completo *</label><input className={fieldCls('name')} value={form.name||''} onChange={e=>setField('name',e.target.value)} placeholder="Dr. Roberto Díaz Alonso" />{errors.name && <p className="mt-1 text-xs text-rose-600">{errors.name}</p>}</div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className={lbl}>Tipo de contacto</label>
-                  <select className={inp} value={form.contact_type||'juez'} onChange={e=>setForm({...form,contact_type:e.target.value})}>
+                  <select className={inp} value={form.type||'juez'} onChange={e=>setForm({...form,type:e.target.value})}>
                     {TYPES.map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
                   </select>
                 </div>
-                <div><label className={lbl}>Ciudad</label><input className={inp} value={form.city||''} onChange={e=>setForm({...form,city:e.target.value})} /></div>
+                <div><label className={lbl}>Ciudad</label><input className={inp} value={form.address||''} onChange={e=>setForm({...form,address:e.target.value})} /></div>
               </div>
-              <div><label className={lbl}>Institución / Juzgado</label><input className={inp} value={form.institution||''} onChange={e=>setForm({...form,institution:e.target.value})} placeholder="1er Juzgado Civil y Comercial" /></div>
-              <div><label className={lbl}>Cargo</label><input className={inp} value={form.position||''} onChange={e=>setForm({...form,position:e.target.value})} placeholder="Juez de Primera Instancia" /></div>
+              <div><label className={lbl}>Institución / Juzgado</label><input className={inp} value={form.court||''} onChange={e=>setForm({...form,court:e.target.value})} placeholder="1er Juzgado Civil y Comercial" /></div>
+              <div><label className={lbl}>Cargo / Especialidad</label><input className={inp} value={form.specialty||''} onChange={e=>setForm({...form,specialty:e.target.value})} placeholder="Juez de Primera Instancia" /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className={lbl}>Teléfono</label><input className={fieldCls('phone')} value={form.phone||''} onChange={e=>setField('phone',e.target.value)} placeholder="0981 234 567" />{errors.phone && <p className="mt-1 text-xs text-rose-600">{errors.phone}</p>}</div>
                 <div><label className={lbl}>Email</label><input type="email" className={fieldCls('email')} value={form.email||''} onChange={e=>setField('email',e.target.value)} />{errors.email && <p className="mt-1 text-xs text-rose-600">{errors.email}</p>}</div>

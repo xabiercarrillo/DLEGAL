@@ -65,6 +65,25 @@ export default function DocumentsPage() {
     esignMut.mutate({ document_id: esignModal.docId, signers: validSigners, provider: esignProvider, subject: `Firma requerida: ${esignModal.name}` })
   }
 
+  const downloadDoc = async (d: any) => {
+    try {
+      const r = await axios.get(`${API}${d.download_url}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob',
+      })
+      const url = URL.createObjectURL(r.data)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = d.original_name || d.name
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (e: any) {
+      toast.error(e.response?.data?.detail || 'Error al descargar')
+    }
+  }
+
   const handleUpload = async (files: FileList | null) => {
     if (!files?.length) return
     setUploading(true)
@@ -142,7 +161,7 @@ export default function DocumentsPage() {
                   <td className="px-4 py-3 text-ink-400 text-xs hidden sm:table-cell tnum">{d.created_at ? new Date(d.created_at).toLocaleDateString('es-PY') : '—'}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <a href={`${API}${d.download_url}`} target="_blank" className="p-1.5 rounded-lg text-ink-600 hover:bg-ink-900/5 transition" title="Descargar"><Download strokeWidth={1.7} className="w-4 h-4" /></a>
+                      <button onClick={() => downloadDoc(d)} className="p-1.5 rounded-lg text-ink-600 hover:bg-ink-900/5 transition" title="Descargar"><Download strokeWidth={1.7} className="w-4 h-4" /></button>
                       {d.mime_type?.includes('pdf') && <button onClick={() => { setEsignModal({docId:d.id,name:d.name}); setSigners([{name:'',email:''}]) }} className="p-1.5 rounded-lg text-gold-700 hover:bg-gold-400/12 transition" title="Enviar para firma"><PenLine strokeWidth={1.7} className="w-4 h-4" /></button>}
                       <button
                         onClick={() => axios.patch(`${API}/documents/${d.id}`, { shared_with_client: !d.shared_with_client }, { headers: { Authorization: `Bearer ${token}` } }).then(() => qc.invalidateQueries({ queryKey: ['documents'] }))}

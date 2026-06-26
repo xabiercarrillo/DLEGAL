@@ -18,6 +18,7 @@ class MediationCreate(BaseModel):
     status: str = "pendiente"
     client_id: Optional[str] = None
     case_id: Optional[str] = None
+    case_number: Optional[str] = None
     mediation_center: Optional[str] = None
     mediator_name: Optional[str] = None
     opposing_party: Optional[str] = None
@@ -29,6 +30,7 @@ class MediationUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
     status: Optional[str] = None
+    case_number: Optional[str] = None
     mediation_center: Optional[str] = None
     mediator_name: Optional[str] = None
     opposing_party: Optional[str] = None
@@ -38,10 +40,18 @@ class MediationUpdate(BaseModel):
     notes: Optional[str] = None
 
 
+def _clean_fks(payload: dict, *fields: str) -> dict:
+    for f in fields:
+        if payload.get(f) == "":
+            payload[f] = None
+    return payload
+
+
 def med_to_dict(m: Mediation) -> dict:
     return {
         "id": m.id, "title": m.title, "description": m.description,
         "status": m.status, "client_id": m.client_id, "case_id": m.case_id,
+        "case_number": m.case_number,
         "mediation_center": m.mediation_center, "mediator_name": m.mediator_name,
         "opposing_party": m.opposing_party, "scheduled_at": m.scheduled_at,
         "result": m.result, "agreement_reached": m.agreement_reached,
@@ -69,7 +79,7 @@ async def create_mediation(
     data: MediationCreate,
     db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user),
 ):
-    m = Mediation(id=str(uuid.uuid4()), tenant_id=current_user.tenant_id, **data.model_dump())
+    m = Mediation(id=str(uuid.uuid4()), tenant_id=current_user.tenant_id, **_clean_fks(data.model_dump(), "client_id", "case_id"))
     db.add(m)
     await db.commit()
     return {"id": m.id, "message": "Mediación creada"}

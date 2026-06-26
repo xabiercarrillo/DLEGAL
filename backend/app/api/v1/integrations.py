@@ -13,7 +13,35 @@ from app.core.deps import get_current_user, require_firm_admin
 from app.models.user import User
 from app.models.integration import TenantIntegration, OutboundWebhook
 from app.services.webhooks import AVAILABLE_EVENTS
+from app.core.crypto import encrypt_secret, decrypt_secret
 import uuid, json
+
+
+def _is_sensitive(key: str) -> bool:
+    """Determina si un campo del config es una credencial sensible."""
+    return any(s in key.lower() for s in ("key", "secret", "token", "password", "sid"))
+
+
+def _encrypt_config(config: dict) -> dict:
+    """Cifra los valores sensibles de un config antes de persistirlo."""
+    out = {}
+    for k, v in (config or {}).items():
+        if _is_sensitive(k) and isinstance(v, str) and v:
+            out[k] = encrypt_secret(v)
+        else:
+            out[k] = v
+    return out
+
+
+def _decrypt_config(config: dict) -> dict:
+    """Descifra los valores sensibles de un config para leerlos/usarlos."""
+    out = {}
+    for k, v in (config or {}).items():
+        if _is_sensitive(k) and isinstance(v, str) and v:
+            out[k] = decrypt_secret(v)
+        else:
+            out[k] = v
+    return out
 
 router = APIRouter(prefix="/integrations", tags=["integrations"])
 
@@ -71,10 +99,11 @@ class WebhookCreate(BaseModel):
 
 # ── Helpers ────────────────────────────────────────────────────────────────
 def _mask_config(config: dict) -> dict:
-    """Oculta valores sensibles para mostrar al frontend."""
+    """Descifra y oculta valores sensibles para mostrar al frontend."""
+    plain = _decrypt_config(config)
     masked = {}
-    for k, v in config.items():
-        if isinstance(v, str) and len(v) > 6 and any(s in k.lower() for s in ("key","secret","token","password","sid")):
+    for k, v in plain.items():
+        if isinstance(v, str) and len(v) > 6 and _is_sensitive(k):
             masked[k] = v[:4] + "****" + v[-2:]
         else:
             masked[k] = v
@@ -146,8 +175,11 @@ async def upsert_integration(
     existing = await _get_integration(db, current_user.tenant_id, provider)
     if existing:
         existing.is_enabled = data.is_enabled
-        # Merge config: only update non-empty values (preserve masked fields)
-        new_cfg = {k: v for k, v in data.config.items() if v and "****" not in str(v)}
+        # Merge config: solo actualizar valores nuevos no enmascarados.
+        # Los valores sensibles nuevos se cifran antes de persistir.
+        new_cfg = _encrypt_config(
+            {k: v for k, v in data.config.items() if v and "****" not in str(v)}
+        )
         existing.config = {**(existing.config or {}), **new_cfg}
         existing.notes = data.notes
     else:
@@ -156,7 +188,7 @@ async def upsert_integration(
             tenant_id=current_user.tenant_id,
             provider=provider,
             is_enabled=data.is_enabled,
-            config=data.config,
+            config=_encrypt_config(data.config),
             notes=data.notes,
         )
         db.add(integration)
@@ -191,7 +223,7 @@ async def test_integration(
     if not integration or not integration.is_enabled:
         raise HTTPException(404, "Integración no configurada o deshabilitada")
 
-    cfg = integration.config or {}
+    cfg = _decrypt_config(integration.config or {})
     result = {"provider": provider, "success": False, "message": "Prueba no implementada para este proveedor"}
 
     if provider == "pandadoc":

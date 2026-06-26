@@ -45,7 +45,8 @@ export const usersApi = {
   list:           (p?: any) => api.get('/users', { params: p }),
   create:         (d: any) => api.post('/users', d),
   deactivate:     (id: string) => api.put(`/users/${id}/deactivate`),
-  update:           (id: string, d: any) => api.put('/users/me', d),
+  update:           (id: string, d: any) => api.put(`/users/${id}`, d),
+  resetPassword:    (id: string, pwd: string) => api.put(`/users/${id}/reset-password`, { new_password: pwd }),
   changeMyPassword: (d: any) => api.put(`/users/me/password`, d),
 }
 
@@ -271,7 +272,7 @@ export const documentsApi = {
   upload: (formData: FormData) =>
     api.post('/documents', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   delete: (id: string) => api.delete(`/documents/${id}`),
-  downloadUrl: (id: string) => `/api/v1/documents/${id}/download`,
+  downloadUrl: (id: string) => `${API_URL}/documents/${id}/download`,
 }
 
 // Export / Backup
@@ -311,6 +312,7 @@ export const integrationsApi = {
 export const esignApi = {
   send: (data: any) => api.post("/esign/send", data),
   list: (params?: any) => api.get("/esign", { params }),
+  resend: (id: string) => api.post(`/esign/${id}/resend`),
   getStatus: (id: string) => api.get(`/esign/${id}/status`),
   getSigningUrl: (id: string, email: string) => api.get(`/esign/${id}/signing-url`, { params: { signer_email: email } }),
   download: (id: string) => api.get(`/esign/${id}/download`, { responseType: "blob" }),

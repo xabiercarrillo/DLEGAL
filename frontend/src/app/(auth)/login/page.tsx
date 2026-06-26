@@ -2,19 +2,18 @@
 import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Eye, EyeOff, Loader2, Phone, MessageCircle, ArrowRight, Stamp, Scale, BookMarked } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Phone, MessageCircle, ArrowRight, Check } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import { authApi } from '@/lib/api'
 import Logo, { LogoMark, Wordmark } from '@/components/Logo'
-import Nanduti from '@/components/Nanduti'
 import toast from 'react-hot-toast'
 
 const PHONE = '0993397400'
 
-const TRUST = [
-  { icon: Scale, text: 'Casos, audiencias y plazos en un solo expediente foliado' },
-  { icon: Stamp, text: 'Facturación SET y firma electrónica con sello digital' },
-  { icon: BookMarked, text: 'LEXI, asistente jurídico con inteligencia artificial' },
+const POINTS = [
+  'Casos, audiencias y plazos en un solo expediente',
+  'Facturación SET, cobranzas y firma electrónica',
+  'LEXI, tu asistente jurídico con inteligencia artificial',
 ]
 
 function LoginForm() {
@@ -40,126 +39,123 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-[100dvh] lg:grid lg:grid-cols-[1.05fr_1fr] bg-paper">
-      {/* ── Panel de marca: sello de ñandutí ── */}
-      <aside className="relative hidden lg:flex flex-col justify-between overflow-hidden bg-ink-950 p-12 xl:p-16">
-        {/* Foto de biblioteca jurídica con overlay para legibilidad */}
+    <div className="min-h-[100dvh] lg:grid lg:grid-cols-[1.1fr_0.9fr]">
+      {/* ── Panel imagen: biblioteca jurídica, nítida ── */}
+      <aside className="relative hidden overflow-hidden lg:flex lg:flex-col lg:justify-between">
         <img
-          src="https://images.unsplash.com/photo-1505664194779-8beaceb93744?w=1400&q=80&auto=format&fit=crop"
-          alt=""
-          className="absolute inset-0 -z-20 h-full w-full object-cover opacity-30"
+          src="https://images.unsplash.com/photo-1505664194779-8beaceb93744?w=1600&q=80&auto=format&fit=crop"
+          alt="Biblioteca jurídica clásica"
+          className="absolute inset-0 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-ink-950/85 via-ink-950/92 to-ink-950" />
-        <div className="pointer-events-none absolute -top-28 -left-24 h-[26rem] w-[26rem] rounded-full bg-[radial-gradient(circle,rgba(147,48,42,0.30),transparent_65%)]" />
+        {/* Scrim: oscuro abajo (texto), velo leve arriba (logo) */}
+        <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/45 to-ink-950/30" />
+        <div className="absolute inset-0 bg-[radial-gradient(70%_50%_at_10%_100%,rgba(147,48,42,0.4),transparent_60%)]" />
 
-        <Link href="/" className="relative inline-flex w-max">
-          <Logo size={46} dark textSize="text-2xl" />
-        </Link>
+        <div className="relative p-12 xl:p-14">
+          <Link href="/" className="inline-flex drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]">
+            <Logo size={44} dark textSize="text-2xl" />
+          </Link>
+        </div>
 
-        <div className="relative max-w-md">
-          <span className="legal-tag inline-flex items-center rounded-sm bg-paper/[0.06] ring-1 ring-paper/10 px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-brass-300">
-            Causa N.º 001 · Asunción
-          </span>
-          <h2 className="mt-6 font-display text-4xl xl:text-[3.4rem] leading-[1.04] text-paper tracking-tight text-balance">
+        <div className="relative p-12 xl:p-16">
+          <h2 className="max-w-md font-display text-4xl leading-[1.05] text-white drop-shadow-[0_2px_20px_rgba(0,0,0,0.6)] xl:text-5xl">
             El estudio jurídico,<br />en orden.
           </h2>
-          <ul className="mt-10 space-y-4">
-            {TRUST.map(({ icon: Icon, text }) => (
-              <li key={text} className="flex items-start gap-3.5 text-paper/70">
-                <span className="mt-0.5 grid h-8 w-8 flex-shrink-0 place-items-center rounded-sm bg-wine-500/15 ring-1 ring-wine-400/25">
-                  <Icon className="h-4 w-4 text-brass-300" strokeWidth={1.6} />
+          <ul className="mt-8 space-y-3">
+            {POINTS.map((p) => (
+              <li key={p} className="flex items-start gap-3 text-white/85">
+                <span className="mt-0.5 grid h-5 w-5 flex-shrink-0 place-items-center rounded-full bg-brass-400 text-ink-950">
+                  <Check className="h-3 w-3" strokeWidth={3} />
                 </span>
-                <span className="text-sm leading-relaxed text-pretty">{text}</span>
+                <span className="text-sm leading-relaxed drop-shadow-[0_1px_8px_rgba(0,0,0,0.5)]">{p}</span>
               </li>
             ))}
           </ul>
+          <p className="mt-10 text-xs text-white/55">
+            © {new Date().getFullYear()} DLEGAL · Desarrollado por <span className="text-white/80">Dotribo</span>
+          </p>
         </div>
-
-        <p className="relative text-xs text-paper/35">
-          © {new Date().getFullYear()} DLEGAL · Desarrollado por <span className="text-paper/60 font-medium">Dotribo</span>
-        </p>
       </aside>
 
-      {/* ── Panel de acceso ── */}
-      <main className="flex items-center justify-center px-5 py-12 sm:px-8">
+      {/* ── Panel acceso ── */}
+      <main className="flex min-h-[100dvh] items-center justify-center bg-paper px-5 py-12 sm:px-8">
         <div className="w-full max-w-sm">
-          {/* Logo móvil */}
-          <div className="lg:hidden mb-8 flex flex-col items-center text-center">
+          <div className="mb-8 flex flex-col items-center text-center lg:hidden">
             <LogoMark size={56} />
             <Wordmark className="mt-3 text-2xl" />
             <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.22em] text-ink-400">by Dotribo</p>
           </div>
 
-          <div className="mb-7">
-            <h1 className="font-display text-3xl text-ink-900 tracking-tight">Iniciar sesión</h1>
-            <p className="mt-1.5 text-sm text-ink-500">Ingresá a tu espacio de trabajo.</p>
+          <div className="mb-8">
+            <h1 className="font-display text-3xl text-ink-900">Iniciar sesión</h1>
+            <p className="mt-2 text-sm text-ink-500">Ingresá a tu espacio de trabajo.</p>
           </div>
 
           {params.get('registered') && (
-            <div className="mb-5 rounded-md bg-seal-500/10 ring-1 ring-seal-500/25 px-4 py-2.5">
-              <p className="text-xs text-seal-700 font-medium">Cuenta creada. Iniciá sesión con tus datos.</p>
+            <div className="mb-5 rounded-md bg-seal-500/10 px-4 py-2.5 ring-1 ring-seal-500/25">
+              <p className="text-xs font-medium text-seal-700">Cuenta creada. Iniciá sesión con tus datos.</p>
             </div>
           )}
 
-          <form onSubmit={submit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-ink-600 mb-1.5">Correo electrónico</label>
+          <form onSubmit={submit} className="space-y-5">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-ink-600">Correo electrónico</label>
               <input
                 type="email" autoComplete="email" required
-                className="w-full rounded-lg bg-white px-4 py-3 text-sm text-ink-900 ring-1 ring-ink-900/12 placeholder:text-ink-300 shadow-tinted-sm transition-all duration-300 ease-fluid focus:outline-none focus:ring-2 focus:ring-wine-500/60"
+                className="w-full rounded-xl bg-white px-4 py-3.5 text-sm text-ink-900 ring-1 ring-ink-900/12 placeholder:text-ink-300 shadow-tinted-sm transition-all duration-300 ease-fluid focus:outline-none focus:ring-2 focus:ring-wine-500/60"
                 placeholder="abogado@ejemplo.com.py"
                 value={email} onChange={e => setEmail(e.target.value)}
               />
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-ink-600 mb-1.5">Contraseña</label>
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-ink-600">Contraseña</label>
               <div className="relative">
                 <input
                   type={show ? 'text' : 'password'} autoComplete="current-password" required
-                  className="w-full rounded-lg bg-white px-4 py-3 pr-11 text-sm text-ink-900 ring-1 ring-ink-900/12 placeholder:text-ink-300 shadow-tinted-sm transition-all duration-300 ease-fluid focus:outline-none focus:ring-2 focus:ring-wine-500/60"
+                  className="w-full rounded-xl bg-white px-4 py-3.5 pr-11 text-sm text-ink-900 ring-1 ring-ink-900/12 placeholder:text-ink-300 shadow-tinted-sm transition-all duration-300 ease-fluid focus:outline-none focus:ring-2 focus:ring-wine-500/60"
                   placeholder="••••••••"
                   value={password} onChange={e => setPassword(e.target.value)}
                 />
                 <button type="button" onClick={() => setShow(!show)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-300 hover:text-ink-600 transition" aria-label={show ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
-                  {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-300 transition hover:text-ink-600" aria-label={show ? 'Ocultar contraseña' : 'Mostrar contraseña'}>
+                  {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
 
             <button type="submit" disabled={loading}
-              className="group relative w-full overflow-hidden rounded-full bg-ink-900 py-3.5 pl-6 pr-2 text-sm font-semibold text-paper shadow-tinted transition-all duration-300 ease-fluid hover:bg-ink-800 active:scale-[0.98] disabled:opacity-60">
+              className="group relative w-full overflow-hidden rounded-full bg-ink-900 py-4 pl-6 pr-2 text-sm font-semibold text-paper shadow-tinted transition-all duration-300 ease-fluid hover:bg-ink-800 active:scale-[0.98] disabled:opacity-60">
               <span className="flex items-center justify-center gap-2">
-                {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 {loading ? 'Ingresando…' : 'Ingresar al sistema'}
                 {!loading && (
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full bg-brass-400 text-ink-950 transition-transform duration-300 ease-fluid group-hover:translate-x-0.5 group-hover:-translate-y-[calc(50%+1px)]">
-                    <ArrowRight className="w-4 h-4" strokeWidth={2.2} />
+                  <span className="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-brass-400 text-ink-950 transition-transform duration-300 ease-fluid group-hover:translate-x-0.5 group-hover:-translate-y-[calc(50%+1px)]">
+                    <ArrowRight className="h-4 w-4" strokeWidth={2.2} />
                   </span>
                 )}
               </span>
             </button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-ink-900/10 space-y-2 text-center">
+          <div className="mt-7 space-y-2 border-t border-ink-900/10 pt-6 text-center">
             <p className="text-xs text-ink-500">
               ¿Sin cuenta?{' '}
-              <Link href="/register" className="text-ink-800 font-semibold hover:text-wine-600 transition">Crear una cuenta</Link>
+              <Link href="/register" className="font-semibold text-ink-800 transition hover:text-wine-600">Crear una cuenta</Link>
             </p>
             <p className="text-xs text-ink-500">
-              <Link href="/forgot-password" className="hover:text-ink-800 transition">¿Olvidaste tu contraseña?</Link>
+              <Link href="/forgot-password" className="transition hover:text-ink-800">¿Olvidaste tu contraseña?</Link>
               {' · '}
-              <Link href="/" className="hover:text-ink-800 transition">Inicio</Link>
+              <Link href="/" className="transition hover:text-ink-800">Inicio</Link>
             </p>
           </div>
 
           <div className="mt-8 flex items-center justify-center gap-5 text-xs">
-            <a href={`tel:${PHONE}`} className="flex items-center gap-1.5 text-ink-400 hover:text-ink-700 transition">
-              <Phone className="w-3.5 h-3.5" /> {PHONE}
+            <a href={`tel:${PHONE}`} className="flex items-center gap-1.5 text-ink-400 transition hover:text-ink-700">
+              <Phone className="h-3.5 w-3.5" /> {PHONE}
             </a>
             <a href={`https://wa.me/595${PHONE.slice(1)}`} target="_blank"
-              className="flex items-center gap-1.5 text-ink-400 hover:text-seal-600 transition">
-              <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+              className="flex items-center gap-1.5 text-ink-400 transition hover:text-seal-600">
+              <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
             </a>
           </div>
         </div>

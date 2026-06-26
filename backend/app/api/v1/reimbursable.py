@@ -5,6 +5,7 @@ adelanta y luego factura al cliente.
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timezone
@@ -39,7 +40,7 @@ def exp_to_dict(e: Expense) -> dict:
         "expense_date": e.expense_date,
         "category": e.category,
         "case_id": e.case_id,
-        "case_title": getattr(e, "case_title", None),
+        "case_title": (e.case.title if getattr(e, "case", None) else None),
         "notes": e.notes,
         "is_billed": getattr(e, "is_billed", False),
         "created_at": e.created_at.isoformat() if e.created_at else None,
@@ -62,7 +63,9 @@ async def list_reimbursable(
         q = q.where(Expense.is_billed == is_billed)
     if case_id:
         q = q.where(Expense.case_id == case_id)
-    result = await db.execute(q.order_by(Expense.expense_date.desc()).limit(limit))
+    result = await db.execute(
+        q.options(selectinload(Expense.case)).order_by(Expense.expense_date.desc()).limit(limit)
+    )
     items = result.scalars().all()
     pending_total = sum(e.amount for e in items if not getattr(e, "is_billed", False))
     return {
@@ -78,6 +81,8 @@ async def create_reimbursable(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if data.amount < 0:
+        raise HTTPException(422, "El monto no puede ser negativo")
     e = Expense(
         id=str(uuid.uuid4()),
         tenant_id=current_user.tenant_id,
