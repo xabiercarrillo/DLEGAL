@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from typing import Optional
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, require_tenant_id
 from app.models.user import User
 from app.models.appointment import Appointment
 import uuid
@@ -50,6 +51,7 @@ def appt_to_dict(a: Appointment) -> dict:
         "type": a.type, "status": a.status, "duration_minutes": a.duration_minutes,
         "location": a.location, "fee": a.fee, "is_paid": a.is_paid,
         "client_id": a.client_id, "case_id": a.case_id,
+        "client_name": (a.client.full_name if a.client else None),
         "created_at": a.created_at.isoformat() if a.created_at else None,
     }
 
@@ -58,11 +60,11 @@ def appt_to_dict(a: Appointment) -> dict:
 async def list_appointments(
     status: Optional[str] = None,
     page: int = Query(1, ge=1),
-    limit: int = Query(20, ge=1, le=100),
+    limit: int = Query(20, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    q = select(Appointment).where(Appointment.tenant_id == current_user.tenant_id)
+    q = select(Appointment).options(selectinload(Appointment.client)).where(Appointment.tenant_id == current_user.tenant_id)
     if status:
         q = q.where(Appointment.status == status)
     total = (await db.execute(select(func.count()).select_from(q.subquery()))).scalar() or 0
@@ -78,9 +80,10 @@ async def create_appointment(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    tenant_id = require_tenant_id(current_user)
     a = Appointment(
         id=str(uuid.uuid4()),
-        tenant_id=current_user.tenant_id,
+        tenant_id=tenant_id,
         lawyer_id=current_user.id,
         **_clean_fks(data.model_dump(), "client_id", "case_id"),
     )

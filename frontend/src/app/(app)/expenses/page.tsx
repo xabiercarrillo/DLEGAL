@@ -1,10 +1,12 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { billingApi, casesApi } from '@/lib/api'
 import { formatPYG, formatDate } from '@/lib/utils'
 import { useState } from 'react'
-import { TrendingDown, Plus, X, Trash2, Filter } from 'lucide-react'
+import { TrendingDown, Plus, X, Trash2, Filter, Pencil } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const CATEGORIES: Record<string,{ label:string; emoji:string; cls:string }> = {
@@ -24,8 +26,9 @@ const lbl = 'block text-[11px] font-semibold text-ink-500 mb-1.5 uppercase track
 
 export default function ExpensesPage() {
   const qc = useQueryClient()
-  const [modal, setModal] = useState<'create'|null>(null)
+  const [modal, setModal] = useState<'create'|'edit'|null>(null)
   const [form, setForm]   = useState<any>({ ...EMPTY })
+  const [selected, setSelected] = useState<any>(null)
   const [catF, setCatF]   = useState('')
   const [billF, setBillF] = useState('')
 
@@ -58,17 +61,54 @@ export default function ExpensesPage() {
     onSuccess: () => { toast.success('Gasto registrado'); qc.invalidateQueries({ queryKey: ['expenses'] }); setModal(null) },
     onError: (e: any) => toast.error(e.response?.data?.detail || 'Error'),
   })
+  const updateMut = useMutation({
+    mutationFn: ({ id, d }: any) => billingApi.expenses.update(id, { ...d, amount: parseFloat(d.amount) }),
+    onSuccess: () => { toast.success('Gasto actualizado'); qc.invalidateQueries({ queryKey: ['expenses'] }); setModal(null) },
+    onError: (e: any) => toast.error(e.response?.data?.detail || 'Error'),
+  })
   const deleteMut = useMutation({
     mutationFn: (id: string) => billingApi.expenses.delete?.(id) || Promise.reject('no delete'),
     onSuccess: () => { toast.success('Eliminado'); qc.invalidateQueries({ queryKey: ['expenses'] }) },
     onError: () => toast.error('Error'),
   })
 
+  const openCreate = () => { setSelected(null); setForm({ ...EMPTY, expense_date: new Date().toISOString().slice(0,10) }); setModal('create') }
+  const openEdit = (i:any) => {
+    setSelected(i)
+    setForm({
+      description: i.description || '', amount: String(i.amount ?? ''), case_id: i.case_id || '',
+      expense_date: (i.expense_date || '').slice(0,10) || new Date().toISOString().slice(0,10),
+      category: i.category || 'tribunal', payment_method: i.payment_method || 'efectivo', notes: i.notes || '',
+      is_reimbursable: i.is_reimbursable ?? true,
+    })
+    setModal('edit')
+  }
+  const save = () => {
+    if (!form.description || !form.amount) return toast.error('Descripción y monto requeridos')
+    if (modal === 'create') createMut.mutate(form)
+    else if (selected) updateMut.mutate({ id: selected.id, d: form })
+  }
+  const pending = createMut.isPending || updateMut.isPending
+
+  const createBtn = (
+    <button onClick={openCreate}
+      className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+      <Plus strokeWidth={1.7} className="w-4 h-4" /> Nuevo gasto
+    </button>
+  )
+
   return (
     <AppLayout title="Gastos">
+      <PageHeader
+        icon={TrendingDown}
+        title="Gastos"
+        description="Controlá los gastos y egresos del estudio."
+        actions={createBtn}
+      />
+
       {/* Header stats */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
-        <div className="xl:col-span-2 bg-ink-900 rounded-2xl p-5 text-white shadow-tinted">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+        <div className="sm:col-span-2 bg-ink-900 rounded-2xl p-5 text-white shadow-tinted">
           <p className="text-white/60 text-xs mb-1">Total gastos</p>
           <p className="text-3xl font-display font-semibold text-rose-300 tnum">{formatPYG(totalAll)}</p>
           <p className="text-white/40 text-xs mt-1 tnum">{allItems.length} registros</p>
@@ -76,15 +116,6 @@ export default function ExpensesPage() {
         <div className="bg-white rounded-2xl p-5 ring-1 ring-ink-900/[0.06] shadow-tinted-sm">
           <p className="text-xl font-semibold text-gold-700 tnum">{formatPYG(billable)}</p>
           <p className="text-xs text-ink-400 mt-0.5">Reembolsables a clientes</p>
-        </div>
-        <div className="bg-white rounded-2xl p-4 ring-1 ring-ink-900/[0.06] shadow-tinted-sm flex items-center justify-center">
-          <button onClick={() => { setForm({ ...EMPTY, expense_date: new Date().toISOString().slice(0,10) }); setModal('create') }}
-            className="flex flex-col items-center gap-2 text-ink-400 hover:text-ink-900 transition">
-            <div className="w-10 h-10 rounded-xl bg-ink-900/[0.05] hover:bg-ink-900/10 flex items-center justify-center transition">
-              <Plus className="w-5 h-5" strokeWidth={1.7} />
-            </div>
-            <span className="text-xs font-semibold">Registrar gasto</span>
-          </button>
         </div>
       </div>
 
@@ -109,7 +140,7 @@ export default function ExpensesPage() {
       )}
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
+      <div className="mb-6 flex flex-wrap items-center gap-2">
         {catF && (
           <span className="flex items-center gap-1.5 bg-rose-500/10 text-rose-700 ring-1 ring-rose-600/20 px-3 py-1.5 rounded-xl text-xs font-semibold">
             {CATEGORIES[catF]?.label}
@@ -126,27 +157,41 @@ export default function ExpensesPage() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-2">{[...Array(5)].map((_,i) => <div key={i} className="h-16 bg-white rounded-2xl animate-pulse ring-1 ring-ink-900/[0.06]" />)}</div>
-      ) : items.length === 0 ? (
-        <div className="bg-white rounded-2xl p-16 text-center ring-1 ring-ink-900/[0.06] shadow-tinted-sm">
-          <TrendingDown className="w-12 h-12 text-ink-200 mx-auto mb-3" strokeWidth={1.7} />
-          <p className="text-ink-400 font-medium">Sin gastos registrados{catF ? ` en "${CATEGORIES[catF]?.label}"` : ''}</p>
+        <div className="bg-white rounded-2xl ring-1 ring-ink-900/[0.06] shadow-tinted-sm overflow-hidden divide-y divide-ink-900/[0.06]">
+          {[...Array(6)].map((_,i) => (
+            <div key={i} className="flex items-center gap-4 px-4 py-3.5">
+              <div className="h-3.5 w-48 rounded bg-ink-900/[0.04] animate-pulse" />
+              <div className="h-5 w-20 rounded-lg bg-ink-900/[0.04] animate-pulse" />
+              <div className="h-3.5 w-24 rounded bg-ink-900/[0.04] animate-pulse" />
+              <div className="h-3.5 w-20 rounded bg-ink-900/[0.04] animate-pulse ml-auto" />
+            </div>
+          ))}
         </div>
+      ) : items.length === 0 ? (
+        <EmptyState
+          icon={TrendingDown}
+          title={catF || billF ? 'Sin gastos con esos filtros' : 'Sin gastos registrados'}
+          description={catF || billF
+            ? 'Probá quitar los filtros para ver todos los gastos del estudio.'
+            : 'Registrá tasas, honorarios de peritos, transporte y demás egresos para controlar los costos del estudio.'}
+          action={!catF && !billF ? createBtn : undefined}
+        />
       ) : (
         <div className="bg-white rounded-2xl ring-1 ring-ink-900/[0.06] shadow-tinted-sm overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-paper border-b border-ink-900/[0.06]">
+            <thead className="bg-paper-deep/50 border-b border-ink-900/[0.06]">
               <tr>
-                {['Descripción','Categoría','Caso','Fecha','Facturable','Monto',''].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-ink-400 uppercase tracking-wide">{h}</th>
+                {['Descripción','Categoría','Caso','Fecha','Facturable','Monto',''].map((h,idx) => (
+                  <th key={idx} className={`px-4 py-3 text-xs font-semibold text-ink-400 uppercase tracking-wide ${h==='Monto'?'text-right':'text-left'}`}>{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-ink-900/[0.05]">
+            <tbody className="divide-y divide-ink-900/[0.06]">
               {items.map((i:any) => {
                 const cat = CATEGORIES[i.category]
                 return (
-                  <tr key={i.id} className="hover:bg-ink-900/[0.02] transition">
+                  <tr key={i.id} className="hover:bg-ink-900/[0.02] transition group">
                     <td className="px-4 py-3 font-medium text-ink-800 max-w-[200px] truncate">{i.description}</td>
                     <td className="px-4 py-3">
                       <span className={`text-xs px-2 py-0.5 rounded-lg font-medium ${cat?.cls || 'bg-ink-900/[0.05] text-ink-600'}`}>
@@ -160,25 +205,32 @@ export default function ExpensesPage() {
                         {i.is_reimbursable ? 'Sí' : 'No'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-semibold text-rose-600 whitespace-nowrap tnum">{formatPYG(i.amount)}</td>
-                    <td className="px-4 py-2">
-                      <button onClick={() => { if (confirm('¿Eliminar este gasto?')) deleteMut.mutate(i.id) }}
-                        className="p-1.5 rounded-lg hover:bg-rose-500/10 text-ink-300 hover:text-rose-500 transition">
-                        <Trash2 className="w-3.5 h-3.5" strokeWidth={1.7} />
-                      </button>
+                    <td className="px-4 py-3 text-right font-semibold text-rose-600 whitespace-nowrap tnum">{formatPYG(i.amount)}</td>
+                    <td className="px-4 py-2 text-right whitespace-nowrap">
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition">
+                        <button onClick={() => openEdit(i)} title="Editar gasto"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-ink-500 ring-1 ring-ink-900/[0.08] hover:bg-ink-900/[0.04] hover:text-ink-900 transition">
+                          <Pencil className="w-3.5 h-3.5" strokeWidth={1.7} /> Editar
+                        </button>
+                        <button onClick={() => { if (confirm('¿Eliminar este gasto?')) deleteMut.mutate(i.id) }} title="Eliminar gasto"
+                          className="p-1.5 rounded-lg hover:bg-rose-500/10 text-ink-300 hover:text-rose-500 transition">
+                          <Trash2 className="w-3.5 h-3.5" strokeWidth={1.7} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )
               })}
             </tbody>
-            <tfoot className="bg-paper border-t border-ink-900/[0.06]">
+            <tfoot className="bg-paper-deep/50 border-t border-ink-900/[0.06]">
               <tr>
                 <td colSpan={5} className="px-4 py-3 text-xs font-semibold text-ink-500 uppercase">Total ({items.length} items)</td>
-                <td className="px-4 py-3 font-semibold text-rose-600 tnum">{formatPYG(total)}</td>
+                <td className="px-4 py-3 text-right font-semibold text-rose-600 tnum">{formatPYG(total)}</td>
                 <td />
               </tr>
             </tfoot>
           </table>
+          </div>
         </div>
       )}
 
@@ -188,7 +240,7 @@ export default function ExpensesPage() {
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-tinted-lg overflow-hidden">
             <div className="bg-ink-900 px-6 py-5 flex items-center justify-between">
               <div>
-                <h2 className="font-display font-semibold text-white">Registrar gasto</h2>
+                <h2 className="font-display font-semibold text-white">{modal === 'create' ? 'Registrar gasto' : 'Editar gasto'}</h2>
                 <p className="text-xs text-white/50 mt-0.5">Tasas, honorarios, transporte y más</p>
               </div>
               <button onClick={() => setModal(null)} className="p-2 rounded-xl hover:bg-white/10 text-white/60 transition"><X className="w-4 h-4" strokeWidth={1.7} /></button>
@@ -226,10 +278,10 @@ export default function ExpensesPage() {
               </label>
             </div>
             <div className="flex gap-3 px-6 py-4 border-t border-ink-900/[0.06]">
-              <button onClick={() => { if(!form.description||!form.amount) return toast.error('Descripción y monto requeridos'); createMut.mutate(form) }}
-                disabled={createMut.isPending}
+              <button onClick={save}
+                disabled={pending}
                 className="flex-1 py-3 bg-ink-900 text-white rounded-full font-semibold text-sm hover:bg-ink-800 active:scale-[0.98] ease-fluid transition disabled:opacity-50">
-                {createMut.isPending ? 'Guardando…' : 'Registrar gasto'}
+                {pending ? 'Guardando…' : modal === 'create' ? 'Registrar gasto' : 'Guardar cambios'}
               </button>
               <button onClick={() => setModal(null)} className="px-5 py-3 ring-1 ring-ink-900/10 rounded-xl text-sm text-ink-600 hover:bg-ink-900/[0.03] transition">Cancelar</button>
             </div>

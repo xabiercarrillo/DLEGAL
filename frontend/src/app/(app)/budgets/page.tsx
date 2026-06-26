@@ -1,5 +1,7 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { formatPYG, formatDate } from '@/lib/utils'
@@ -80,6 +82,17 @@ export default function BudgetsPage() {
 
   return (
     <AppLayout title="Presupuestos y Cotizaciones">
+      <PageHeader
+        icon={FileCheck}
+        title="Presupuestos"
+        description="Presupuestos y honorarios propuestos a clientes."
+        actions={
+          <button onClick={openCreate} className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm flex-shrink-0">
+            <Plus className="w-4 h-4" strokeWidth={1.7} />Nuevo presupuesto
+          </button>
+        }
+      />
+
       {/* Stats */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
         {[
@@ -95,11 +108,11 @@ export default function BudgetsPage() {
         ))}
       </div>
 
-      {/* Filters + New */}
-      <div className="flex items-center gap-2 mb-5">
-        <div className="flex gap-1 p-1 bg-ink-900/10 rounded-xl flex-wrap">
+      {/* Filters */}
+      <div className="mb-6">
+        <div className="flex gap-1 p-1 bg-ink-900/[0.05] ring-1 ring-ink-900/[0.06] rounded-xl flex-wrap">
           <button onClick={() => setStatusF('')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${!statusF?'bg-white text-ink-900 shadow-tinted-sm':'text-ink-500'}`}>
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${!statusF?'bg-white text-ink-900 shadow-tinted-sm':'text-ink-500 hover:text-ink-700'}`}>
             Todos ({allItems.length})
           </button>
           {Object.entries(STATUS).map(([v, { label }]) => (
@@ -109,19 +122,21 @@ export default function BudgetsPage() {
             </button>
           ))}
         </div>
-        <button onClick={openCreate} className="ml-auto flex items-center gap-2 bg-ink-900 text-white px-4 py-2.5 rounded-full text-sm font-semibold hover:bg-ink-800 active:scale-[0.98] ease-fluid transition flex-shrink-0">
-          <Plus className="w-4 h-4" strokeWidth={1.7} />Nuevo presupuesto
-        </button>
       </div>
 
       {isLoading ? (
-        <div className="space-y-3">{[...Array(4)].map((_,i) => <div key={i} className="h-24 bg-white rounded-2xl animate-pulse ring-1 ring-ink-900/[0.06]" />)}</div>
+        <div className="space-y-3">{[...Array(4)].map((_,i) => <div key={i} className="h-24 bg-ink-900/[0.04] rounded-2xl animate-pulse ring-1 ring-ink-900/[0.06]" />)}</div>
       ) : items.length === 0 ? (
-        <div className="bg-white rounded-2xl p-16 text-center ring-1 ring-ink-900/[0.06] shadow-tinted-sm">
-          <FileCheck className="w-12 h-12 text-ink-200 mx-auto mb-3" strokeWidth={1.7} />
-          <p className="text-ink-400 font-medium">Sin presupuestos{statusF ? ` con estado "${STATUS[statusF]?.label}"` : ''}</p>
-          <button onClick={openCreate} className="mt-3 text-sm text-ink-900 hover:underline font-medium">+ Crear presupuesto</button>
-        </div>
+        <EmptyState
+          icon={FileCheck}
+          title={statusF ? `Sin presupuestos "${STATUS[statusF]?.label}"` : 'Sin presupuestos'}
+          description={statusF ? 'No hay presupuestos en este estado. Probá con otro filtro.' : 'Cotizá tus servicios jurídicos y hacé seguimiento de cada propuesta enviada al cliente.'}
+          action={
+            <button onClick={openCreate} className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+              <Plus className="w-4 h-4" strokeWidth={1.7} />Crear primer presupuesto
+            </button>
+          }
+        />
       ) : (
         <div className="space-y-3">
           {items.map((b: any) => {

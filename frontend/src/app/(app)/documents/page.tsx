@@ -1,5 +1,7 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/store/auth'
 import { useState, useRef } from 'react'
@@ -107,6 +109,18 @@ export default function DocumentsPage() {
 
   return (
     <AppLayout title="Documentos">
+      <PageHeader
+        icon={FolderOpen}
+        title="Documentos"
+        description="Repositorio de documentos y archivos del estudio."
+        actions={
+          <button onClick={() => fileRef.current?.click()}
+            className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm flex-shrink-0">
+            <Upload className="w-4 h-4" strokeWidth={1.7} />Subir archivo
+          </button>
+        }
+      />
+
       <div className="border-2 border-dashed border-ink-900/15 rounded-2xl p-8 text-center mb-6 hover:border-gold-400/60 hover:bg-paper transition cursor-pointer"
         onClick={() => fileRef.current?.click()}
         onDragOver={(e) => e.preventDefault()}
@@ -133,17 +147,23 @@ export default function DocumentsPage() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-3">{[...Array(4)].map((_,i)=><div key={i} className="h-16 bg-white rounded-xl animate-pulse ring-1 ring-ink-900/[0.06]"/>)}</div>
+        <div className="space-y-3">{[...Array(4)].map((_,i)=><div key={i} className="h-16 bg-ink-900/[0.04] rounded-xl animate-pulse ring-1 ring-ink-900/[0.06]"/>)}</div>
       ) : docs.length === 0 ? (
-        <div className="bg-white ring-1 ring-ink-900/[0.06] shadow-tinted-sm rounded-2xl p-16 text-center">
-          <FolderOpen strokeWidth={1.7} className="w-12 h-12 text-ink-200 mx-auto mb-3" />
-          <p className="text-ink-500 font-medium">Sin documentos cargados</p>
-          <p className="text-ink-400 text-sm mt-1">Arrastrá archivos arriba para comenzar</p>
-        </div>
+        <EmptyState
+          icon={FolderOpen}
+          title={filterCat ? `Sin documentos en "${filterCat}"` : 'Sin documentos cargados'}
+          description={filterCat ? 'No hay archivos en esta categoría. Probá con otra o subí uno nuevo.' : 'Arrastrá archivos a la zona de carga o subí tu primer documento para empezar el repositorio.'}
+          action={
+            <button onClick={() => fileRef.current?.click()}
+              className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+              <Upload className="w-4 h-4" strokeWidth={1.7} />Subir documento
+            </button>
+          }
+        />
       ) : (
         <div className="bg-white rounded-2xl ring-1 ring-ink-900/[0.06] shadow-tinted-sm overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-paper text-xs text-ink-500 uppercase">
+            <thead className="bg-paper-deep/50 text-xs text-ink-500 uppercase">
               <tr>
                 <th className="px-4 py-3 text-left">Archivo</th>
                 <th className="px-4 py-3 text-left hidden md:table-cell">Categoría</th>
@@ -152,7 +172,7 @@ export default function DocumentsPage() {
                 <th className="px-4 py-3 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-ink-900/[0.05]">
+            <tbody className="divide-y divide-ink-900/[0.06]">
               {docs.map((d: any) => (
                 <tr key={d.id} className="hover:bg-ink-900/[0.02] transition">
                   <td className="px-4 py-3"><div className="flex items-center gap-3">{fileIcon(d.mime_type)}<span className="font-medium text-ink-800 truncate max-w-xs">{d.name}</span></div></td>

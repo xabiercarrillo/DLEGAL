@@ -63,7 +63,7 @@ def med_to_dict(m: Mediation) -> dict:
 @router.get("")
 async def list_mediations(
     status: Optional[str] = None,
-    page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100),
+    page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=500),
     db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user),
 ):
     q = select(Mediation).where(Mediation.tenant_id == current_user.tenant_id)

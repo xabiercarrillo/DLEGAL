@@ -26,7 +26,7 @@ class EntryCreate(BaseModel):
 
 @router.get("/accounting/entries")
 async def list_entries(
-    page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100),
+    page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=500),
     db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user),
 ):
     q = select(AccountingEntry).where(AccountingEntry.tenant_id == current_user.tenant_id)
@@ -109,7 +109,7 @@ class ReimbCreate(BaseModel):
 @router.get("/accounting/reimbursable")
 async def list_reimbursable(
     is_billed: Optional[bool] = None,
-    page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100),
+    page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=500),
     db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user),
 ):
     q = select(ReimbursableExpense).where(ReimbursableExpense.tenant_id == current_user.tenant_id)

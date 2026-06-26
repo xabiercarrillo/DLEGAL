@@ -1,5 +1,7 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { clientsApi, portalApi } from '@/lib/api'
 import { CASE_STATUS, MATTER, formatDate, formatPYG } from '@/lib/utils'
@@ -69,27 +71,39 @@ export default function ClientsPage() {
 
   return (
     <AppLayout title="Clientes">
-      <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
-        <div className="relative flex-1 max-w-sm">
+      <PageHeader
+        icon={Users}
+        title="Clientes"
+        description="Gestioná a las personas y empresas que representás en el estudio."
+        actions={
+          <button onClick={() => { setSelected(null); setForm({...EMPTY}); setErrors({}); setModal('create') }}
+            className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+            <Plus strokeWidth={1.7} className="w-4 h-4" /> Nuevo Cliente
+          </button>
+        }
+      />
+      <div className="mb-6">
+        <div className="relative max-w-sm">
           <Search strokeWidth={1.7} className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
           <input placeholder="Buscar por nombre, email, CI, RUC..." value={search} onChange={e => setSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition" />
         </div>
-        <button onClick={() => { setSelected(null); setForm({...EMPTY}); setErrors({}); setModal('create') }}
-          className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid">
-          <Plus strokeWidth={1.7} className="w-4 h-4" /> Nuevo Cliente
-        </button>
       </div>
 
       {isLoading ? (
         <div className="space-y-3">{[...Array(6)].map((_, i) => <div key={i} className="h-20 bg-white rounded-2xl animate-pulse ring-1 ring-ink-900/[0.06]" />)}</div>
       ) : items.length === 0 ? (
-        <div className="bg-white rounded-3xl p-16 text-center ring-1 ring-ink-900/[0.06] shadow-tinted-sm">
-          <Users strokeWidth={1.7} className="w-12 h-12 text-ink-200 mx-auto mb-3" />
-          <p className="text-ink-400 font-medium">Sin clientes registrados</p>
-          <button onClick={() => { setSelected(null); setForm({...EMPTY}); setErrors({}); setModal('create') }}
-            className="mt-4 text-sm text-gold-700 hover:text-gold-800 hover:underline font-medium">+ Agregar primer cliente</button>
-        </div>
+        <EmptyState
+          icon={Users}
+          title={search ? 'Sin resultados' : 'Sin clientes registrados'}
+          description={search ? 'No encontramos clientes que coincidan con tu búsqueda.' : 'Cargá tu primer cliente para empezar a vincular casos, cobros y documentos.'}
+          action={
+            <button onClick={() => { setSelected(null); setForm({...EMPTY}); setErrors({}); setModal('create') }}
+              className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+              <Plus strokeWidth={1.7} className="w-4 h-4" /> Agregar primer cliente
+            </button>
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {items.map(c => (

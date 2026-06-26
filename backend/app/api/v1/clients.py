@@ -4,7 +4,7 @@ from sqlalchemy import select, func, or_
 from pydantic import BaseModel
 from typing import Optional
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, require_tenant_id
 from app.models.user import User
 from app.models.client import Client
 from app.models.case import Case
@@ -46,7 +46,7 @@ def client_to_dict(c: Client) -> dict:
 @router.get("")
 async def list_clients(
     search: Optional[str] = None,
-    page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100),
+    page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=500),
     db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     q = select(Client).where(Client.tenant_id == current_user.tenant_id, Client.is_active == True)
@@ -79,8 +79,9 @@ def _map_client_aliases(payload: dict) -> dict:
 
 @router.post("", status_code=201)
 async def create_client(data: ClientCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    tenant_id = require_tenant_id(current_user)
     payload = _map_client_aliases(data.model_dump(exclude_none=True))
-    client = Client(id=str(uuid.uuid4()), tenant_id=current_user.tenant_id, **payload)
+    client = Client(id=str(uuid.uuid4()), tenant_id=tenant_id, **payload)
     db.add(client)
     await db.commit()
     return {"id": client.id, "message": "Cliente creado"}

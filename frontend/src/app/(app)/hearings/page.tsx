@@ -1,5 +1,7 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { hearingsApi, casesApi } from '@/lib/api'
 import { useState } from 'react'
@@ -156,6 +158,16 @@ export default function HearingsPage() {
 
   return (
     <AppLayout title="Audiencias">
+      <PageHeader
+        icon={Scale}
+        title="Audiencias"
+        description="Próximas audiencias y comparecencias del estudio."
+        actions={
+          <button onClick={openCreate} className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+            <Plus strokeWidth={1.7} className="w-4 h-4" />Nueva Audiencia
+          </button>
+        }
+      />
       {/* Stats */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
         {[
@@ -191,20 +203,22 @@ export default function HearingsPage() {
           <option value="">Todos los tipos</option>
           {Object.entries(TYPES).map(([v,l]) => <option key={v} value={v}>{l}</option>)}
         </select>
-        <button onClick={openCreate} className="ml-auto flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid">
-          <Plus strokeWidth={1.7} className="w-4 h-4" />Nueva Audiencia
-        </button>
       </div>
 
       {/* Content */}
       {isLoading ? (
         <div className="space-y-2">{[...Array(5)].map((_,i) => <div key={i} className="h-20 bg-white rounded-2xl animate-pulse ring-1 ring-ink-900/[0.06]" />)}</div>
       ) : items.length === 0 ? (
-        <div className="bg-white rounded-3xl p-16 text-center ring-1 ring-ink-900/[0.06] shadow-tinted-sm">
-          <Scale strokeWidth={1.7} className="w-12 h-12 text-ink-200 mx-auto mb-3" />
-          <p className="text-ink-400 font-medium">Sin audiencias registradas</p>
-          <button onClick={openCreate} className="mt-4 text-sm text-gold-700 hover:text-gold-800 hover:underline font-medium">+ Crear primera audiencia</button>
-        </div>
+        <EmptyState
+          icon={Scale}
+          title={(statusF && statusF !== 'scheduled') || typeF ? 'Sin audiencias para este filtro' : 'Sin audiencias registradas'}
+          description={(statusF && statusF !== 'scheduled') || typeF ? 'Probá cambiar los filtros para ver otras audiencias.' : 'Agendá tu primera audiencia y mantené el control de las comparecencias del estudio.'}
+          action={
+            <button onClick={openCreate} className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+              <Plus strokeWidth={1.7} className="w-4 h-4" />Crear primera audiencia
+            </button>
+          }
+        />
       ) : (
         <div className="space-y-6">
           {statusF === 'scheduled' ? (

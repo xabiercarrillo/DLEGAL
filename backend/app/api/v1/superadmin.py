@@ -294,7 +294,7 @@ async def list_tenants(
     plan: Optional[str] = None,
     search: Optional[str] = None,
     page: int = Query(1, ge=1),
-    limit: int = Query(20, ge=1, le=100),
+    limit: int = Query(20, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(_require_super_admin),
 ):
@@ -546,7 +546,7 @@ async def register_payment(
 async def list_all_users(
     tenant_id: Optional[str] = None,
     page: int = Query(1, ge=1),
-    limit: int = Query(30, ge=1, le=100),
+    limit: int = Query(30, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(_require_super_admin),
 ):

@@ -5,9 +5,10 @@ from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from typing import Optional
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, require_tenant_id
 from app.models.user import User
 from app.models.hearing import Hearing
+from app.models.case import Case
 import uuid
 
 router = APIRouter(prefix="/hearings", tags=["hearings"])
@@ -44,6 +45,7 @@ def hearing_to_dict(h: Hearing) -> dict:
         "scheduled_at": h.scheduled_at, "duration_minutes": h.duration_minutes,
         "court": h.court, "room": h.room, "judge": h.judge,
         "notes": h.notes, "result": h.result,
+        "case_title": (h.case.title if h.case else None),
         "created_at": h.created_at.isoformat() if h.created_at else None,
     }
 
@@ -58,10 +60,10 @@ def _clean_fks(payload: dict, *fields: str) -> dict:
 async def list_hearings(
     case_id: Optional[str] = None, status: Optional[str] = None,
     type: Optional[str] = None,
-    page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100),
+    page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=500),
     db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
-    q = select(Hearing).where(Hearing.tenant_id == current_user.tenant_id)
+    q = select(Hearing).options(selectinload(Hearing.case)).where(Hearing.tenant_id == current_user.tenant_id)
     if case_id: q = q.where(Hearing.case_id == case_id)
     if status: q = q.where(Hearing.status == status)
     if type: q = q.where(Hearing.type == type)
@@ -71,8 +73,9 @@ async def list_hearings(
 
 @router.post("", status_code=201)
 async def create_hearing(data: HearingCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    tenant_id = require_tenant_id(current_user)
     payload = _clean_fks(data.model_dump(), "case_id")
-    h = Hearing(id=str(uuid.uuid4()), tenant_id=current_user.tenant_id, lawyer_id=current_user.id, **payload)
+    h = Hearing(id=str(uuid.uuid4()), tenant_id=tenant_id, lawyer_id=current_user.id, **payload)
     db.add(h)
     await db.commit()
     return {"id": h.id, "message": "Audiencia creada"}

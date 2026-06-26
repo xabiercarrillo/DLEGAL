@@ -1,5 +1,7 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { billingApi, clientsApi, casesApi } from '@/lib/api'
 import { formatPYG, formatDate } from '@/lib/utils'
@@ -79,8 +81,22 @@ export default function BillingPage() {
   const PAID_ST = ['paid','pagada','cobrada']
   const totalMonth = items.filter(i => (i.paid_at||'').startsWith(new Date().toISOString().slice(0,7)) || PAID_ST.includes(i.status)).reduce((s:number,i:any)=>s+(i.amount||0),0)
 
+  const createBtn = (
+    <button onClick={() => { setForm({...EMPTY}); setErrors({}); setModal(true) }}
+      className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+      <Plus className="w-4 h-4" strokeWidth={1.7} /> Nueva factura
+    </button>
+  )
+
   return (
     <AppLayout title="Facturación SET">
+      <PageHeader
+        icon={Receipt}
+        title="Facturación"
+        description="Facturación a clientes y estado de cada factura."
+        actions={createBtn}
+      />
+
       {/* Summary row */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-2xl p-4 ring-1 ring-ink-900/[0.06] shadow-tinted-sm">
@@ -97,26 +113,33 @@ export default function BillingPage() {
         </div>
       </div>
 
-      <div className="flex justify-end mb-4">
-        <button onClick={() => { setForm({...EMPTY}); setErrors({}); setModal(true) }}
-          className="flex items-center gap-2 bg-ink-900 text-white px-4 py-2.5 rounded-full text-sm font-semibold hover:bg-ink-800 active:scale-[0.98] ease-fluid transition">
-          <Plus className="w-4 h-4" strokeWidth={1.7} /> Nueva factura
-        </button>
-      </div>
-
       {isLoading ? (
-        <div className="space-y-3">{[...Array(5)].map((_,i)=><div key={i} className="h-20 bg-white rounded-2xl animate-pulse ring-1 ring-ink-900/[0.06]" />)}</div>
-      ) : items.length === 0 ? (
-        <div className="bg-white rounded-2xl p-16 text-center ring-1 ring-ink-900/[0.06] shadow-tinted-sm">
-          <Receipt className="w-12 h-12 text-ink-200 mx-auto mb-3" strokeWidth={1.7} />
-          <p className="text-ink-500">Sin facturas registradas</p>
+        <div className="bg-white rounded-2xl ring-1 ring-ink-900/[0.06] shadow-tinted-sm overflow-hidden divide-y divide-ink-900/[0.06]">
+          {[...Array(5)].map((_,i) => (
+            <div key={i} className="flex items-center gap-4 px-4 py-4">
+              <div className="h-9 w-9 rounded-xl bg-ink-900/[0.04] animate-pulse" />
+              <div className="space-y-2">
+                <div className="h-3.5 w-32 rounded bg-ink-900/[0.04] animate-pulse" />
+                <div className="h-3 w-20 rounded bg-ink-900/[0.04] animate-pulse" />
+              </div>
+              <div className="h-5 w-20 rounded-lg bg-ink-900/[0.04] animate-pulse ml-auto" />
+              <div className="h-3.5 w-24 rounded bg-ink-900/[0.04] animate-pulse" />
+            </div>
+          ))}
         </div>
+      ) : items.length === 0 ? (
+        <EmptyState
+          icon={Receipt}
+          title="Sin facturas registradas"
+          description="Emití tu primera factura SET para llevar el control de cobros y comprobantes del estudio."
+          action={createBtn}
+        />
       ) : (
         <div className="bg-white rounded-2xl ring-1 ring-ink-900/[0.06] overflow-hidden shadow-tinted-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-paper border-b border-ink-900/[0.06]">
+                <tr className="bg-paper-deep/50 border-b border-ink-900/[0.06]">
                   <th className="text-left py-3 px-4 text-xs font-semibold text-ink-400 uppercase">N° / Timbrado</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-ink-400 uppercase">Cliente</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-ink-400 uppercase">Descripción</th>
@@ -126,7 +149,7 @@ export default function BillingPage() {
                   <th className="text-right py-3 px-4 text-xs font-semibold text-ink-400 uppercase">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-ink-900/[0.05]">
+              <tbody className="divide-y divide-ink-900/[0.06]">
                 {items.map((inv: any) => {
                   const st = STATUS_MAP[inv.status] || { label: inv.status, cls: 'bg-ink-900/[0.05] text-ink-600' }
                   const isPaid = PAID_ST.includes(inv.status)

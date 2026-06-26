@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from typing import Optional, List
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, require_tenant_id
 from app.models.user import User
 from app.models.billing import Invoice, InvoiceItem, InvoiceStatus, Income, Expense
 from app.models.client import Client
@@ -59,7 +59,7 @@ def inv_to_dict(inv: Invoice) -> dict:
 @router.get("/invoices")
 async def list_invoices(
     status: Optional[str] = None, search: Optional[str] = None,
-    page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100),
+    page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=500),
     db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     q = select(Invoice).options(selectinload(Invoice.client), selectinload(Invoice.items)).where(Invoice.tenant_id == current_user.tenant_id)
@@ -70,6 +70,7 @@ async def list_invoices(
 
 @router.post("/invoices", status_code=201)
 async def create_invoice(data: InvoiceCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    tenant_id = require_tenant_id(current_user)
     if not data.client_id:
         raise HTTPException(422, "Debe seleccionar un cliente para la factura")
 
@@ -100,7 +101,7 @@ async def create_invoice(data: InvoiceCreate, db: AsyncSession = Depends(get_db)
 
     # Numerador de factura por tenant
     from app.models.tenant import Tenant
-    tenant_result = await db.execute(select(Tenant).where(Tenant.id == current_user.tenant_id))
+    tenant_result = await db.execute(select(Tenant).where(Tenant.id == tenant_id))
     tenant = tenant_result.scalar_one_or_none()
     counter = 1
     if tenant:
@@ -109,7 +110,7 @@ async def create_invoice(data: InvoiceCreate, db: AsyncSession = Depends(get_db)
     number = f"{counter:07d}"
 
     inv = Invoice(
-        id=str(uuid.uuid4()), tenant_id=current_user.tenant_id,
+        id=str(uuid.uuid4()), tenant_id=tenant_id,
         number=number, client_id=data.client_id, case_id=data.case_id,
         invoice_type=data.invoice_type, timbrado=data.timbrado,
         timbrado_expires=data.timbrado_expires,
@@ -157,7 +158,7 @@ class IncomeCreate(BaseModel):
 
 @router.get("/income")
 async def list_income(
-    page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100),
+    page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=500),
     db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     q = select(Income).where(Income.tenant_id == current_user.tenant_id)
@@ -201,14 +202,46 @@ async def income_stats(db: AsyncSession = Depends(get_db), current_user: User = 
     total = res_t.scalar() or 0
     return {"total_month": total_month, "count_month": count_month, "total": total}
 
+class IncomeUpdate(BaseModel):
+    description: Optional[str] = None
+    amount: Optional[float] = None
+    income_date: Optional[str] = None
+    payment_method: Optional[str] = None
+    category: Optional[str] = None
+    client_id: Optional[str] = None
+    case_id: Optional[str] = None
+    invoice_id: Optional[str] = None
+    notes: Optional[str] = None
+
+def _clean_fks(payload: dict, *fields: str) -> dict:
+    for f in fields:
+        if payload.get(f) == "":
+            payload[f] = None
+    return payload
+
 @router.post("/income", status_code=201)
 async def create_income(data: IncomeCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    tenant_id = require_tenant_id(current_user)
     if data.amount < 0:
         raise HTTPException(422, "El monto no puede ser negativo")
-    inc = Income(id=str(uuid.uuid4()), tenant_id=current_user.tenant_id, **data.model_dump())
+    inc = Income(id=str(uuid.uuid4()), tenant_id=tenant_id, **data.model_dump())
     db.add(inc)
     await db.commit()
     return {"id": inc.id, "message": "Ingreso registrado"}
+
+@router.put("/income/{income_id}")
+async def update_income(income_id: str, data: IncomeUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    result = await db.execute(select(Income).where(Income.id == income_id, Income.tenant_id == current_user.tenant_id))
+    obj = result.scalar_one_or_none()
+    if not obj:
+        raise HTTPException(404, "Ingreso no encontrado")
+    payload = _clean_fks(data.model_dump(exclude_none=True), "client_id", "case_id", "invoice_id")
+    if "amount" in payload and payload["amount"] < 0:
+        raise HTTPException(422, "El monto no puede ser negativo")
+    for k, v in payload.items():
+        setattr(obj, k, v)
+    await db.commit()
+    return {"message": "Ingreso actualizado"}
 
 # ─── EXPENSES ─────────────────────────────────────────────────
 class ExpenseCreate(BaseModel):
@@ -222,7 +255,7 @@ class ExpenseCreate(BaseModel):
 
 @router.get("/expenses")
 async def list_expenses(
-    page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100),
+    page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=500),
     db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     q = select(Expense).where(Expense.tenant_id == current_user.tenant_id)
@@ -239,14 +272,39 @@ async def list_expenses(
                 "case_title": (e.case.title if e.case else None)}
     return {"items": [_exp_row(e) for e in items], "total": total}
 
+class ExpenseUpdate(BaseModel):
+    description: Optional[str] = None
+    amount: Optional[float] = None
+    expense_date: Optional[str] = None
+    category: Optional[str] = None
+    case_id: Optional[str] = None
+    is_reimbursable: Optional[bool] = None
+    payment_method: Optional[str] = None
+    notes: Optional[str] = None
+
 @router.post("/expenses", status_code=201)
 async def create_expense(data: ExpenseCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    tenant_id = require_tenant_id(current_user)
     if data.amount < 0:
         raise HTTPException(422, "El monto no puede ser negativo")
-    exp = Expense(id=str(uuid.uuid4()), tenant_id=current_user.tenant_id, **data.model_dump())
+    exp = Expense(id=str(uuid.uuid4()), tenant_id=tenant_id, **data.model_dump())
     db.add(exp)
     await db.commit()
     return {"id": exp.id, "message": "Gasto registrado"}
+
+@router.put("/expenses/{expense_id}")
+async def update_expense(expense_id: str, data: ExpenseUpdate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    result = await db.execute(select(Expense).where(Expense.id == expense_id, Expense.tenant_id == current_user.tenant_id))
+    obj = result.scalar_one_or_none()
+    if not obj:
+        raise HTTPException(404, "Gasto no encontrado")
+    payload = _clean_fks(data.model_dump(exclude_none=True), "case_id")
+    if "amount" in payload and payload["amount"] < 0:
+        raise HTTPException(422, "El monto no puede ser negativo")
+    for k, v in payload.items():
+        setattr(obj, k, v)
+    await db.commit()
+    return {"message": "Gasto actualizado"}
 
 # ─── BUDGETS ──────────────────────────────────────────────────
 # Los endpoints de presupuestos viven en budgets.py (router dedicado con

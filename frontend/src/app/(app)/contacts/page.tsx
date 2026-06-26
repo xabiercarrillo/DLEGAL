@@ -1,5 +1,7 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { contactsApi } from '@/lib/api'
 import { useState } from 'react'
@@ -129,21 +131,29 @@ export default function ContactsPage() {
 
   return (
     <AppLayout title="Contactos Profesionales">
-      {/* Filters + New */}
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <div className="relative flex-1 min-w-48 max-w-xs">
-          <Search strokeWidth={1.7} className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
-          <input placeholder="Buscar por nombre, institución…" value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition" />
+      <PageHeader
+        icon={Contact2}
+        title="Contactos Profesionales"
+        description="Tu agenda de contactos: juzgados, contrapartes, peritos y colegas."
+        actions={
+          <button onClick={openCreate} className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+            <Plus strokeWidth={1.7} className="w-4 h-4" />Agregar Contacto
+          </button>
+        }
+      />
+      <div className="mb-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-48 max-w-xs">
+            <Search strokeWidth={1.7} className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
+            <input placeholder="Buscar por nombre, institución…" value={search} onChange={e => setSearch(e.target.value)}
+              className="w-full pl-9 pr-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition" />
+          </div>
+          <select className="px-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition"
+            value={typeF} onChange={e => setTypeF(e.target.value)}>
+            <option value="">Todos los tipos</option>
+            {TYPES.map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
+          </select>
         </div>
-        <select className="px-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition"
-          value={typeF} onChange={e => setTypeF(e.target.value)}>
-          <option value="">Todos los tipos</option>
-          {TYPES.map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
-        </select>
-        <button onClick={openCreate} className="ml-auto flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid">
-          <Plus strokeWidth={1.7} className="w-4 h-4" />Agregar Contacto
-        </button>
       </div>
 
       {isLoading ? (
@@ -151,11 +161,16 @@ export default function ContactsPage() {
           {[...Array(6)].map((_,i) => <div key={i} className="h-32 bg-white rounded-2xl animate-pulse ring-1 ring-ink-900/[0.06]" />)}
         </div>
       ) : items.length === 0 ? (
-        <div className="bg-white rounded-3xl p-16 text-center ring-1 ring-ink-900/[0.06] shadow-tinted-sm">
-          <Contact2 strokeWidth={1.7} className="w-12 h-12 text-ink-200 mx-auto mb-3" />
-          <p className="text-ink-400 font-medium">Sin contactos profesionales</p>
-          <button onClick={openCreate} className="mt-3 text-sm text-gold-700 hover:text-gold-800 hover:underline font-medium">+ Agregar primer contacto</button>
-        </div>
+        <EmptyState
+          icon={Contact2}
+          title={search || typeF ? 'Sin resultados' : 'Sin contactos profesionales'}
+          description={search || typeF ? 'No encontramos contactos que coincidan con tu búsqueda.' : 'Sumá a tu primer contacto: jueces, secretarios, peritos y colegas siempre a mano.'}
+          action={
+            <button onClick={openCreate} className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+              <Plus strokeWidth={1.7} className="w-4 h-4" />Agregar primer contacto
+            </button>
+          }
+        />
       ) : (
         <div className="space-y-6">
           {favs.length > 0 && (

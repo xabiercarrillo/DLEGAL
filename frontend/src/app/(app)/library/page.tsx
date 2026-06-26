@@ -1,5 +1,7 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 import { useQuery } from '@tanstack/react-query'
 import { libraryApi } from '@/lib/api'
 import { useState } from 'react'
@@ -55,32 +57,36 @@ export default function LibraryPage() {
 
   return (
     <AppLayout title="Biblioteca Jurídica Paraguay">
-      {/* Quick links bar */}
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex flex-wrap gap-3 flex-1">
-          <div className="relative flex-1 min-w-48 max-w-sm">
-            <Search strokeWidth={1.7} className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
-            <input placeholder="Buscar norma, artículo, código..." value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition" />
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            <button onClick={() => setAreaFilter('')}
-              className={`px-3 py-2 rounded-xl text-xs font-medium transition ${!areaFilter ? 'bg-ink-900 text-white' : 'bg-ink-900/[0.04] text-ink-600 hover:bg-ink-900/[0.07]'}`}>
-              Todas
-            </button>
-            {areas.map(a => (
-              <button key={a} onClick={() => setAreaFilter(a === areaFilter ? '' : a)}
-                className={`px-3 py-2 rounded-xl text-xs font-medium transition ${areaFilter === a ? 'bg-ink-900 text-white' : 'bg-ink-900/[0.04] text-ink-600 hover:bg-ink-900/[0.07]'}`}>
-                {AREA_LABELS[a] || a}
-              </button>
-            ))}
-          </div>
+      <PageHeader
+        icon={BookOpen}
+        title="Biblioteca Jurídica"
+        description="Biblioteca jurídica: leyes, jurisprudencia y modelos."
+        actions={
+          <button onClick={() => setShowRecursos(!showRecursos)}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ease-fluid shadow-tinted-sm ${showRecursos ? 'bg-ink-900 text-white hover:bg-ink-800' : 'bg-white ring-1 ring-ink-900/10 text-ink-700 hover:bg-ink-900/5'}`}>
+            <Star strokeWidth={1.7} className="w-4 h-4" />
+            {showRecursos ? 'Ver normas' : 'Recursos oficiales'}
+          </button>
+        }
+      />
+      <div className="mb-6 flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-48 max-w-sm">
+          <Search strokeWidth={1.7} className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
+          <input placeholder="Buscar norma, artículo, código..." value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full pl-9 pr-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition" />
         </div>
-        <button onClick={() => setShowRecursos(!showRecursos)}
-          className={`ml-4 flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition flex-shrink-0 ${showRecursos ? 'bg-ink-900 text-white' : 'bg-white ring-1 ring-ink-900/10 text-ink-700 hover:bg-ink-900/5'}`}>
-          <Star strokeWidth={1.7} className="w-4 h-4" />
-          {showRecursos ? 'Ver normas' : 'Recursos oficiales'}
-        </button>
+        <div className="flex gap-2 flex-wrap">
+          <button onClick={() => setAreaFilter('')}
+            className={`px-3 py-2 rounded-xl text-xs font-medium transition ${!areaFilter ? 'bg-ink-900 text-white' : 'bg-ink-900/[0.04] text-ink-600 hover:bg-ink-900/[0.07]'}`}>
+            Todas
+          </button>
+          {areas.map(a => (
+            <button key={a} onClick={() => setAreaFilter(a === areaFilter ? '' : a)}
+              className={`px-3 py-2 rounded-xl text-xs font-medium transition ${areaFilter === a ? 'bg-ink-900 text-white' : 'bg-ink-900/[0.04] text-ink-600 hover:bg-ink-900/[0.07]'}`}>
+              {AREA_LABELS[a] || a}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Recursos oficiales panel */}
@@ -106,13 +112,22 @@ export default function LibraryPage() {
       )}
 
       {isLoading ? (
-        <div className="space-y-2">{[...Array(8)].map((_,i)=><div key={i} className="h-20 bg-white rounded-2xl animate-pulse ring-1 ring-ink-900/[0.06]" />)}</div>
+        <div className="space-y-2">{[...Array(8)].map((_,i)=>(
+          <div key={i} className="bg-white rounded-2xl p-4 ring-1 ring-ink-900/[0.06] shadow-tinted-sm flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-ink-900/[0.04] animate-pulse flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3.5 w-40 rounded bg-ink-900/[0.04] animate-pulse" />
+              <div className="h-3 w-3/4 rounded bg-ink-900/[0.04] animate-pulse" />
+              <div className="h-3 w-1/2 rounded bg-ink-900/[0.04] animate-pulse" />
+            </div>
+          </div>
+        ))}</div>
       ) : items.length === 0 ? (
-        <div className="bg-white ring-1 ring-ink-900/[0.06] shadow-tinted-sm rounded-2xl p-16 text-center">
-          <BookOpen strokeWidth={1.7} className="w-12 h-12 text-ink-200 mx-auto mb-3" />
-          <p className="text-ink-500 font-medium">Sin resultados</p>
-          <p className="text-xs text-ink-400 mt-1">{search ? `No hay normas que coincidan con "${search}"` : 'La biblioteca está vacía'}</p>
-        </div>
+        <EmptyState
+          icon={BookOpen}
+          title="Sin resultados"
+          description={search ? `No hay normas que coincidan con "${search}".` : 'La biblioteca está vacía. Probá con otros filtros o consultá los recursos oficiales.'}
+        />
       ) : (
         <>
           <p className="text-xs text-ink-400 mb-3 tnum">{items.length} norma{items.length !== 1 ? 's' : ''} encontrada{items.length !== 1 ? 's' : ''}</p>

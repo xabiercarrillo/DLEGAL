@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from typing import Optional
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, require_tenant_id
 from app.models.user import User
 from app.models.task import Task
+from app.models.case import Case
 import uuid
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
@@ -40,6 +42,9 @@ def task_to_dict(t: Task) -> dict:
         "title": t.title, "description": t.description, "status": t.status,
         "priority": t.priority, "due_date": t.due_date,
         "estimated_hours": t.estimated_hours, "actual_hours": t.actual_hours,
+        "case_title": (t.case.title if t.case else None),
+        "client_name": (t.case.client.full_name if (t.case and t.case.client) else None),
+        "assigned_name": (t.assignee.full_name if t.assignee else None),
         "created_at": t.created_at.isoformat() if t.created_at else None,
     }
 
@@ -47,10 +52,13 @@ def task_to_dict(t: Task) -> dict:
 async def list_tasks(
     status: Optional[str] = None, case_id: Optional[str] = None,
     priority: Optional[str] = None,
-    page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100),
+    page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=500),
     db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
-    q = select(Task).where(Task.tenant_id == current_user.tenant_id)
+    q = select(Task).options(
+        selectinload(Task.case).selectinload(Case.client),
+        selectinload(Task.assignee),
+    ).where(Task.tenant_id == current_user.tenant_id)
     if status: q = q.where(Task.status == status)
     if case_id: q = q.where(Task.case_id == case_id)
     if priority: q = q.where(Task.priority == priority)
@@ -60,7 +68,8 @@ async def list_tasks(
 
 @router.post("", status_code=201)
 async def create_task(data: TaskCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    t = Task(id=str(uuid.uuid4()), tenant_id=current_user.tenant_id, created_by=current_user.id, **_clean_fks(data.model_dump(), "case_id", "assigned_to"))
+    tenant_id = require_tenant_id(current_user)
+    t = Task(id=str(uuid.uuid4()), tenant_id=tenant_id, created_by=current_user.id, **_clean_fks(data.model_dump(), "case_id", "assigned_to"))
     db.add(t)
     await db.commit()
     return {"id": t.id, "message": "Tarea creada"}

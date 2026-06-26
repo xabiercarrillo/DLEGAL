@@ -1,5 +1,7 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { casesApi, clientsApi } from '@/lib/api'
 import { CASE_STATUS, MATTER, formatDate, formatPYG, daysUntil, urgencyBadge } from '@/lib/utils'
@@ -85,33 +87,49 @@ export default function CasesPage() {
 
   return (
     <AppLayout title="Casos">
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <div className="relative flex-1 min-w-40">
-          <Search strokeWidth={1.7} className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
-          <input placeholder="Buscar caso..." value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition" />
+      <PageHeader
+        icon={Briefcase}
+        title="Casos"
+        description="Seguí el estado, las audiencias y los plazos de cada expediente."
+        actions={
+          <button onClick={() => { setSelected(null); setForm({...EMPTY}); setErrors({}); setModal('create') }}
+            className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+            <Plus strokeWidth={1.7} className="w-4 h-4" /> Nuevo Caso
+          </button>
+        }
+      />
+      <div className="mb-6">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-40">
+            <Search strokeWidth={1.7} className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
+            <input placeholder="Buscar caso..." value={search} onChange={e => setSearch(e.target.value)}
+              className="w-full pl-9 pr-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition" />
+          </div>
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition">
+            <option value="">Todos los estados</option>
+            {STATUS_OPTS.map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
+          </select>
+          <select value={matterFilter} onChange={e => setMatterFilter(e.target.value)} className="px-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition">
+            <option value="">Todas las materias</option>
+            {MATTER_OPTS.map(([k,v]) => <option key={k} value={k}>{v}</option>)}
+          </select>
         </div>
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition">
-          <option value="">Todos los estados</option>
-          {STATUS_OPTS.map(([k,v]) => <option key={k} value={k}>{v.label}</option>)}
-        </select>
-        <select value={matterFilter} onChange={e => setMatterFilter(e.target.value)} className="px-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition">
-          <option value="">Todas las materias</option>
-          {MATTER_OPTS.map(([k,v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
-        <button onClick={() => { setSelected(null); setForm({...EMPTY}); setErrors({}); setModal('create') }}
-          className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid ml-auto">
-          <Plus strokeWidth={1.7} className="w-4 h-4" /> Nuevo Caso
-        </button>
       </div>
 
       {isLoading ? (
         <div className="space-y-3">{[...Array(5)].map((_,i)=><div key={i} className="h-24 bg-white rounded-2xl animate-pulse ring-1 ring-ink-900/[0.06]" />)}</div>
       ) : items.length === 0 ? (
-        <div className="bg-white rounded-3xl p-16 text-center ring-1 ring-ink-900/[0.06] shadow-tinted-sm">
-          <Briefcase strokeWidth={1.7} className="w-12 h-12 text-ink-200 mx-auto mb-3" />
-          <p className="text-ink-400">Sin casos registrados</p>
-        </div>
+        <EmptyState
+          icon={Briefcase}
+          title={search || statusFilter || matterFilter ? 'Sin resultados' : 'Sin casos registrados'}
+          description={search || statusFilter || matterFilter ? 'No encontramos casos que coincidan con los filtros aplicados.' : 'Cargá tu primer expediente para empezar a seguir audiencias, plazos y honorarios.'}
+          action={
+            <button onClick={() => { setSelected(null); setForm({...EMPTY}); setErrors({}); setModal('create') }}
+              className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+              <Plus strokeWidth={1.7} className="w-4 h-4" /> Crear primer caso
+            </button>
+          }
+        />
       ) : (
         <div className="space-y-3">
           {items.map(c => {

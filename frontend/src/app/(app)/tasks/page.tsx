@@ -1,5 +1,7 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { tasksApi, casesApi, usersApi } from '@/lib/api'
 import { formatDate, daysUntil, urgencyBadge } from '@/lib/utils'
@@ -85,8 +87,19 @@ export default function TasksPage() {
 
   return (
     <AppLayout title="Tareas">
+      <PageHeader
+        icon={CheckSquare}
+        title="Tareas"
+        description="Organizá el trabajo del estudio y dale seguimiento a cada pendiente."
+        actions={
+          <button onClick={openCreate}
+            className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+            <Plus strokeWidth={1.7} className="w-4 h-4" />Nueva Tarea
+          </button>
+        }
+      />
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2 mb-5">
+      <div className="mb-6 flex flex-wrap items-center gap-2">
         {/* Status tabs */}
         <div className="flex gap-1 bg-sand-100 p-1 rounded-full">
           {STATUS_TABS.map(s => {
@@ -105,11 +118,6 @@ export default function TasksPage() {
         <button onClick={() => setShowFilters(!showFilters)}
           className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm transition ${showFilters || priorityFilter ? 'bg-ink-900 text-white' : 'bg-white ring-1 ring-ink-900/10 text-ink-700 hover:bg-ink-900/5'}`}>
           <Filter strokeWidth={1.7} className="w-4 h-4" />Filtros
-        </button>
-
-        <button onClick={openCreate}
-          className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid ml-auto">
-          <Plus strokeWidth={1.7} className="w-4 h-4" />Nueva Tarea
         </button>
       </div>
 
@@ -138,13 +146,17 @@ export default function TasksPage() {
       {isLoading ? (
         <div className="space-y-2">{[...Array(6)].map((_, i) => <div key={i} className="h-14 bg-white rounded-2xl animate-pulse ring-1 ring-ink-900/[0.06]" />)}</div>
       ) : items.length === 0 ? (
-        <div className="bg-white rounded-3xl p-16 text-center ring-1 ring-ink-900/[0.06] shadow-tinted-sm">
-          <CheckSquare strokeWidth={1.7} className="w-12 h-12 text-ink-200 mx-auto mb-3" />
-          <p className="text-ink-400 font-medium">Sin tareas en este estado</p>
-          <button onClick={openCreate} className="mt-4 px-5 py-2 bg-ink-900 text-white rounded-full text-sm font-semibold hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid">
-            + Crear primera tarea
-          </button>
-        </div>
+        <EmptyState
+          icon={CheckSquare}
+          title={statusFilter || priorityFilter ? 'Sin tareas en este estado' : 'Sin tareas registradas'}
+          description={statusFilter || priorityFilter ? 'No hay tareas que coincidan con los filtros seleccionados.' : 'Creá tu primera tarea para organizar los pendientes del estudio.'}
+          action={
+            <button onClick={openCreate}
+              className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+              <Plus strokeWidth={1.7} className="w-4 h-4" />Crear primera tarea
+            </button>
+          }
+        />
       ) : (
         <div className="space-y-1.5">
           {items.map(t => {

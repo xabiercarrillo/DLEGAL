@@ -1,5 +1,6 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
+import PageHeader from '@/components/ui/PageHeader'
 import { useQuery } from '@tanstack/react-query'
 import { reportsApi } from '@/lib/api'
 import { formatPYG, MATTER, CASE_STATUS } from '@/lib/utils'
@@ -130,23 +131,31 @@ export default function ReportsPage() {
 
   return (
     <AppLayout title="Reportes y Estadísticas">
-      {/* Year selector + exports */}
+      <PageHeader
+        icon={BarChart3}
+        title="Reportes"
+        description="Reportes e indicadores de gestión del estudio."
+        actions={
+          <div className="flex gap-2 flex-shrink-0">
+            <button onClick={() => exportCSV('income')}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gold-600 text-white rounded-full text-sm font-medium hover:bg-gold-700 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+              <Download className="w-4 h-4" strokeWidth={1.7} /> Ingresos CSV
+            </button>
+            <button onClick={() => exportCSV('expenses')}
+              className="flex items-center gap-2 px-4 py-2.5 bg-ink-900 text-white rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+              <Download className="w-4 h-4" strokeWidth={1.7} /> Gastos CSV
+            </button>
+          </div>
+        }
+      />
+
+      {/* Year selector */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <div className="flex items-center gap-2 bg-white ring-1 ring-ink-900/[0.06] shadow-tinted-sm rounded-xl px-3 py-2">
           <span className="text-sm text-ink-500">Año:</span>
           <select value={year} onChange={e => setYear(+e.target.value)} className="text-sm font-semibold text-ink-800 focus:outline-none bg-transparent">
             {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
-        </div>
-        <div className="ml-auto flex gap-2">
-          <button onClick={() => exportCSV('income')}
-            className="flex items-center gap-2 px-4 py-2.5 bg-gold-600 text-white rounded-xl text-sm font-semibold hover:bg-gold-700 active:scale-[0.98] ease-fluid transition">
-            <Download className="w-4 h-4" strokeWidth={1.7} /> Ingresos CSV
-          </button>
-          <button onClick={() => exportCSV('expenses')}
-            className="flex items-center gap-2 px-4 py-2.5 bg-rose-600 text-white rounded-xl text-sm font-semibold hover:bg-rose-700 active:scale-[0.98] ease-fluid transition">
-            <Download className="w-4 h-4" strokeWidth={1.7} /> Gastos CSV
-          </button>
         </div>
       </div>
 

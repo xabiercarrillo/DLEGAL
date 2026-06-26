@@ -1,5 +1,7 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { appointmentsApi, clientsApi } from '@/lib/api'
 import { formatDate } from '@/lib/utils'
@@ -136,6 +138,17 @@ export default function AppointmentsPage() {
 
   return (
     <AppLayout title="Agenda de citas">
+      <PageHeader
+        icon={Calendar}
+        title="Agenda de citas"
+        description="Tu agenda de citas y reuniones con clientes."
+        actions={
+          <button onClick={openCreate}
+            className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+            <Plus className="w-4 h-4" strokeWidth={1.8} />Nueva cita
+          </button>
+        }
+      />
       {/* Stats */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
         {[
@@ -154,7 +167,7 @@ export default function AppointmentsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-2 mb-5">
+      <div className="flex items-center gap-2 mb-6">
         <div className="flex gap-1 p-1 bg-sand-100 rounded-xl">
           {[{v:'scheduled',l:'Programadas'},{v:'completed',l:'Realizadas'},{v:'',l:'Todas'}].map(s => (
             <button key={s.v} onClick={() => setStatusF(s.v)}
@@ -163,20 +176,23 @@ export default function AppointmentsPage() {
             </button>
           ))}
         </div>
-        <button onClick={openCreate} className="ml-auto flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid">
-          <Plus className="w-4 h-4" strokeWidth={1.8} />Nueva cita
-        </button>
       </div>
 
       {/* Content */}
       {isLoading ? (
         <div className="space-y-2">{[...Array(4)].map((_,i) => <div key={i} className="h-20 bg-white rounded-2xl animate-pulse ring-1 ring-ink-900/[0.06]" />)}</div>
       ) : items.length === 0 ? (
-        <div className="bg-white rounded-3xl p-16 text-center ring-1 ring-ink-900/[0.06] shadow-tinted-sm">
-          <Calendar className="w-12 h-12 text-ink-200 mx-auto mb-3" strokeWidth={1.5} />
-          <p className="text-ink-400 font-medium">Sin citas registradas</p>
-          <button onClick={openCreate} className="mt-3 text-sm text-ink-700 hover:text-gold-600 font-medium transition">+ Agendar primera cita</button>
-        </div>
+        <EmptyState
+          icon={Calendar}
+          title={statusF ? 'Sin citas en este estado' : 'Sin citas registradas'}
+          description={statusF ? 'No hay citas que coincidan con el filtro seleccionado.' : 'Agendá tu primera cita o reunión con un cliente.'}
+          action={
+            <button onClick={openCreate}
+              className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+              <Plus className="w-4 h-4" strokeWidth={1.8} />Agendar primera cita
+            </button>
+          }
+        />
       ) : statusF === 'scheduled' ? (
         <div className="space-y-5">
           {today.length > 0 && (

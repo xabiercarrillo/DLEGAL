@@ -1,5 +1,7 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { formatDate } from '@/lib/utils'
@@ -76,6 +78,17 @@ export default function MediationsPage() {
 
   return (
     <AppLayout title="Mediaciones y conciliaciones">
+      <PageHeader
+        icon={Handshake}
+        title="Mediaciones"
+        description="Procesos de mediación y conciliación en curso."
+        actions={
+          <button onClick={openCreate}
+            className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+            <Plus className="w-4 h-4" strokeWidth={1.8} />Nueva mediación
+          </button>
+        }
+      />
       {/* Stats */}
       <div className="grid grid-cols-2 xl:grid-cols-5 gap-3 mb-6">
         {Object.entries(STATUS).map(([k, v]) => {
@@ -99,20 +112,23 @@ export default function MediationsPage() {
           </h2>
           <span className="text-xs bg-sand-100 text-ink-500 px-2 py-0.5 rounded-lg tnum">{items.length}</span>
         </div>
-        <button onClick={openCreate} className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid">
-          <Plus className="w-4 h-4" strokeWidth={1.8} />Nueva mediación
-        </button>
       </div>
 
       {/* List */}
       {isLoading ? (
         <div className="space-y-3">{[...Array(4)].map((_,i) => <div key={i} className="h-28 bg-white rounded-2xl animate-pulse ring-1 ring-ink-900/[0.06]" />)}</div>
       ) : items.length === 0 ? (
-        <div className="bg-white rounded-3xl p-16 text-center ring-1 ring-ink-900/[0.06] shadow-tinted-sm">
-          <Handshake className="w-12 h-12 text-ink-200 mx-auto mb-3" strokeWidth={1.5} />
-          <p className="text-ink-400 font-medium">Sin mediaciones registradas</p>
-          <button onClick={openCreate} className="mt-3 text-sm text-ink-700 hover:text-gold-600 font-medium transition">+ Registrar primera mediación</button>
-        </div>
+        <EmptyState
+          icon={Handshake}
+          title={statusF ? 'Sin mediaciones en este estado' : 'Sin mediaciones registradas'}
+          description={statusF ? 'No hay mediaciones que coincidan con el filtro seleccionado.' : 'Registrá tu primera mediación o conciliación para darle seguimiento.'}
+          action={
+            <button onClick={openCreate}
+              className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+              <Plus className="w-4 h-4" strokeWidth={1.8} />Registrar primera mediación
+            </button>
+          }
+        />
       ) : (
         <div className="space-y-3">
           {items.map((m: any) => {

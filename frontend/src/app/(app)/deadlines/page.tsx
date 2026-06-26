@@ -1,5 +1,7 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { deadlinesApi, casesApi } from '@/lib/api'
 import { formatDate, daysUntil, urgencyBadge } from '@/lib/utils'
@@ -122,6 +124,17 @@ export default function DeadlinesPage() {
 
   return (
     <AppLayout title="Plazos Procesales">
+      <PageHeader
+        icon={Clock}
+        title="Plazos Procesales"
+        description="Plazos procesales con vencimientos; no se te pasa ninguno."
+        actions={
+          <button onClick={() => { setForm({ ...EMPTY }); setModal('create') }}
+            className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+            <Plus strokeWidth={1.7} className="w-4 h-4" />Nuevo Plazo
+          </button>
+        }
+      />
       {/* Stats */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
         {[
@@ -154,21 +167,23 @@ export default function DeadlinesPage() {
           <option value="">Todas las prioridades</option>
           {Object.entries(PRIORITY).map(([v,{label}]) => <option key={v} value={v}>{label}</option>)}
         </select>
-        <button onClick={() => { setForm({ ...EMPTY }); setModal('create') }}
-          className="ml-auto flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid">
-          <Plus strokeWidth={1.7} className="w-4 h-4" />Nuevo Plazo
-        </button>
       </div>
 
       {/* Groups */}
       {isLoading ? (
         <div className="space-y-2">{[...Array(5)].map((_,i) => <div key={i} className="h-16 bg-white rounded-2xl animate-pulse ring-1 ring-ink-900/[0.06]" />)}</div>
       ) : items.length === 0 ? (
-        <div className="bg-white rounded-3xl p-16 text-center ring-1 ring-ink-900/[0.06] shadow-tinted-sm">
-          <Clock strokeWidth={1.7} className="w-12 h-12 text-ink-200 mx-auto mb-3" />
-          <p className="text-ink-400 font-medium">Sin plazos registrados</p>
-          <button onClick={() => { setForm({ ...EMPTY }); setModal('create') }} className="mt-3 text-sm text-gold-700 hover:text-gold-800 hover:underline font-medium">+ Crear primer plazo</button>
-        </div>
+        <EmptyState
+          icon={Clock}
+          title={(statusF && statusF !== 'pending') || priorityF ? 'Sin plazos para este filtro' : 'Sin plazos registrados'}
+          description={(statusF && statusF !== 'pending') || priorityF ? 'Probá cambiar los filtros para ver otros plazos.' : 'Registrá tu primer plazo y dejá que el sistema te avise antes de cada vencimiento.'}
+          action={
+            <button onClick={() => { setForm({ ...EMPTY }); setModal('create') }}
+              className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+              <Plus strokeWidth={1.7} className="w-4 h-4" />Crear primer plazo
+            </button>
+          }
+        />
       ) : statusF === 'pending' ? (
         <div className="space-y-5">
           {overdue.length > 0 && (

@@ -1,5 +1,7 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { usersApi } from '@/lib/api'
 import { useState } from 'react'
@@ -131,6 +133,17 @@ export default function TeamPage() {
 
   return (
     <AppLayout title="Equipo">
+      <PageHeader
+        icon={Users}
+        title="Equipo"
+        description="Integrantes del estudio, roles y permisos."
+        actions={
+          <button onClick={openCreate} className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+            <Plus strokeWidth={1.7} className="w-4 h-4" />Invitar miembro
+          </button>
+        }
+      />
+
       {/* Role summary */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
         {roleCounts.map(r => (
@@ -143,30 +156,42 @@ export default function TeamPage() {
         ))}
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-2 mb-5">
-        {filterRole && (
+      {/* Active filter */}
+      {filterRole && (
+        <div className="mb-5 flex items-center gap-2">
           <div className="flex items-center gap-2 bg-gold-400/12 text-gold-700 px-3 py-1.5 rounded-full text-xs font-semibold">
             Filtro: {ROLE_MAP[filterRole]?.l}
             <button onClick={() => setFilterRole('')} className="hover:text-gold-900"><X strokeWidth={1.7} className="w-3 h-3" /></button>
           </div>
-        )}
-        <button onClick={openCreate} className="ml-auto flex items-center gap-2 bg-ink-900 text-white px-4 py-2.5 rounded-full text-sm font-semibold hover:bg-ink-800 active:scale-[0.98] transition ease-fluid">
-          <Plus strokeWidth={1.7} className="w-4 h-4" />Invitar miembro
-        </button>
-      </div>
+        </div>
+      )}
 
       {/* Members grid */}
       {isLoading ? (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-          {[...Array(4)].map((_,i) => <div key={i} className="h-36 bg-white rounded-2xl animate-pulse ring-1 ring-ink-900/[0.06]" />)}
+          {[...Array(4)].map((_,i) => (
+            <div key={i} className="bg-white rounded-2xl p-5 ring-1 ring-ink-900/[0.06] shadow-tinted-sm flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-ink-900/[0.04] animate-pulse flex-shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-1/2 rounded bg-ink-900/[0.04] animate-pulse" />
+                <div className="h-5 w-24 rounded-lg bg-ink-900/[0.04] animate-pulse" />
+                <div className="h-3 w-2/3 rounded bg-ink-900/[0.04] animate-pulse mt-3" />
+                <div className="h-3 w-1/3 rounded bg-ink-900/[0.04] animate-pulse" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : members.length === 0 ? (
-        <div className="bg-white rounded-2xl p-16 text-center ring-1 ring-ink-900/[0.06] shadow-tinted-sm">
-          <Users strokeWidth={1.7} className="w-12 h-12 text-ink-200 mx-auto mb-3" />
-          <p className="text-ink-400 font-medium">Sin miembros en el equipo</p>
-          <button onClick={openCreate} className="mt-3 text-sm text-gold-700 hover:underline font-medium">+ Invitar primer miembro</button>
-        </div>
+        <EmptyState
+          icon={Users}
+          title={filterRole ? 'Sin miembros con ese rol' : 'Sin miembros en el equipo'}
+          description={filterRole ? 'Ningún integrante coincide con el rol filtrado.' : 'Invitá a los abogados, secretarias y colaboradores de tu estudio para trabajar en conjunto.'}
+          action={
+            <button onClick={openCreate} className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+              <Plus strokeWidth={1.7} className="w-4 h-4" /> Invitar primer miembro
+            </button>
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           {members.map(m => <MemberCard key={m.id} m={m} />)}

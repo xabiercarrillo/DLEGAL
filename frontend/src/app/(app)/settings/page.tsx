@@ -1,11 +1,12 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
+import PageHeader from '@/components/ui/PageHeader'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { usersApi, tenantsApi } from '@/lib/api'
 import { useAuthStore } from '@/store/auth'
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
-import { User, Building2, Bell, Bot, Shield, Save, Eye, EyeOff, CheckCircle } from 'lucide-react'
+import { User, Building2, Bell, Bot, Shield, Save, Eye, EyeOff, CheckCircle, Settings } from 'lucide-react'
 
 const TABS = [
   { id: 'profile', label: 'Mi Perfil', icon: User },
@@ -113,6 +114,11 @@ export default function SettingsPage() {
   return (
     <AppLayout title="Configuración">
       <div className="max-w-3xl mx-auto">
+        <PageHeader
+          icon={Settings}
+          title="Configuración"
+          description="Configuración del estudio y de tu cuenta."
+        />
         {/* Tab nav */}
         <div className="flex gap-1 bg-ink-900/[0.05] rounded-xl p-1 mb-6 overflow-x-auto">
           {TABS.map(t => (

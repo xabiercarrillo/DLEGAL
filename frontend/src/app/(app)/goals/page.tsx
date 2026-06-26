@@ -1,5 +1,7 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { goalsApi } from '@/lib/api'
 import { formatPYG } from '@/lib/utils'
@@ -81,7 +83,7 @@ export default function GoalsPage() {
     const isMonetary = g.unit === '₲'
     const fmtVal = (v: number) => isMonetary ? formatPYG(v) : `${v.toLocaleString('es-PY')} ${g.unit}`
     return (
-      <div className={`bg-white rounded-xl ring-1 p-5 hover:shadow-tinted transition ${g.is_completed ? 'ring-gold-400/30 bg-gold-400/[0.04]' : 'ring-ink-900/[0.06]'}`}>
+      <div className={`bg-white rounded-2xl ring-1 p-5 shadow-tinted-sm hover:shadow-tinted hover:-translate-y-0.5 transition-all duration-300 ease-fluid ${g.is_completed ? 'ring-gold-400/30 bg-gold-400/[0.04]' : 'ring-ink-900/[0.06]'}`}>
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2">
             <div>
@@ -143,19 +145,19 @@ export default function GoalsPage() {
   }
 
   return (
-    <AppLayout>
+    <AppLayout title="Objetivos">
       <div className="p-6 max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-display font-semibold text-ink-900 flex items-center gap-2">
-              <Target className="text-gold-500" size={28} strokeWidth={1.7} /> Objetivos
-            </h1>
-            <p className="text-ink-500 text-sm mt-1">Establezca y haga seguimiento de sus metas profesionales</p>
-          </div>
-          <button onClick={() => setModal(true)} className="flex items-center gap-2 bg-ink-900 text-white px-4 py-2 rounded-full font-semibold hover:bg-ink-800 active:scale-[0.98] ease-fluid transition">
-            <Plus size={18} strokeWidth={1.7} /> Nuevo objetivo
-          </button>
-        </div>
+        <PageHeader
+          icon={Target}
+          title="Objetivos"
+          description="Objetivos del estudio y su progreso."
+          actions={
+            <button onClick={() => setModal(true)}
+              className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+              <Plus size={18} strokeWidth={1.7} /> Nuevo objetivo
+            </button>
+          }
+        />
 
         {/* Stats summary */}
         <div className="grid grid-cols-3 gap-4 mb-6">
@@ -172,7 +174,7 @@ export default function GoalsPage() {
           ].map(s => {
             const Icon = s.icon
             return (
-              <div key={s.label} className={`rounded-xl border p-4 ${s.cls}`}>
+              <div key={s.label} className={`rounded-2xl border p-4 shadow-tinted-sm ${s.cls}`}>
                 <div className="flex items-center gap-2 mb-1">
                   <Icon size={16} strokeWidth={1.7} /> <span className="text-sm font-medium">{s.label}</span>
                 </div>
@@ -183,16 +185,19 @@ export default function GoalsPage() {
         </div>
 
         {isLoading ? (
-          <div className="text-center py-12 text-ink-400">Cargando...</div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{[...Array(4)].map((_, i) => <div key={i} className="h-44 bg-white rounded-2xl animate-pulse ring-1 ring-ink-900/[0.06]" />)}</div>
         ) : goals.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl ring-1 ring-ink-900/[0.06] shadow-tinted-sm">
-            <Target className="mx-auto mb-4 text-ink-300" size={48} strokeWidth={1.7} />
-            <p className="text-lg font-medium text-ink-700">Sin objetivos definidos</p>
-            <p className="text-sm text-ink-400 mt-1">Cree su primer objetivo para hacer seguimiento de sus metas</p>
-            <button onClick={() => setModal(true)} className="mt-4 px-6 py-2 bg-ink-900 text-white rounded-full font-semibold hover:bg-ink-800 active:scale-[0.98] ease-fluid transition">
-              Crear objetivo
-            </button>
-          </div>
+          <EmptyState
+            icon={Target}
+            title="Sin objetivos definidos"
+            description="Creá tu primer objetivo para hacer seguimiento de las metas del estudio."
+            action={
+              <button onClick={() => setModal(true)}
+                className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+                <Plus size={18} strokeWidth={1.7} /> Crear objetivo
+              </button>
+            }
+          />
         ) : (
           <div className="space-y-6">
             {active.length > 0 && (

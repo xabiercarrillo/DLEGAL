@@ -1,5 +1,7 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { formatPYG, formatDate } from '@/lib/utils'
@@ -116,6 +118,11 @@ export default function CollectionsPage() {
 
   return (
     <AppLayout title="Gestión de Cobranzas">
+      <PageHeader
+        icon={DollarSign}
+        title="Cobranzas"
+        description="Cobranzas pendientes y gestión de cuentas por cobrar."
+      />
 
       {/* KPIs */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
@@ -169,15 +176,27 @@ export default function CollectionsPage() {
 
       {/* List */}
       {isLoading ? (
-        <div className="space-y-3">{[...Array(5)].map((_, i) => <div key={i} className="h-24 bg-white rounded-2xl animate-pulse ring-1 ring-ink-900/[0.06]" />)}</div>
-      ) : items.length === 0 ? (
-        <div className="bg-white rounded-2xl p-16 text-center ring-1 ring-ink-900/[0.06] shadow-tinted-sm">
-          <DollarSign className="w-10 h-10 text-ink-200 mx-auto mb-3" strokeWidth={1.7} />
-          <p className="text-ink-400 font-medium">
-            {statusF ? `Sin facturas con estado "${STATUS_LABEL[statusF]}"` : 'Sin facturas en gestión de cobranza'}
-          </p>
-          <p className="text-xs text-ink-300 mt-1">Las facturas emitidas desde facturación aparecerán aquí</p>
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="bg-white rounded-2xl ring-1 ring-ink-900/[0.06] shadow-tinted-sm p-4 flex items-start gap-4">
+              <div className="w-11 h-11 rounded-2xl bg-ink-900/[0.04] animate-pulse flex-shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3.5 w-40 rounded bg-ink-900/[0.04] animate-pulse" />
+                <div className="h-3 w-56 rounded bg-ink-900/[0.04] animate-pulse" />
+                <div className="h-7 w-48 rounded-xl bg-ink-900/[0.04] animate-pulse mt-2" />
+              </div>
+              <div className="h-5 w-24 rounded bg-ink-900/[0.04] animate-pulse" />
+            </div>
+          ))}
         </div>
+      ) : items.length === 0 ? (
+        <EmptyState
+          icon={DollarSign}
+          title={statusF ? `Sin facturas "${STATUS_LABEL[statusF]}"` : 'Sin facturas en cobranza'}
+          description={statusF
+            ? 'No hay facturas con ese estado. Probá con otro filtro.'
+            : 'Las facturas emitidas desde facturación aparecerán aquí para su seguimiento y cobro.'}
+        />
       ) : (
         <div className="space-y-2">
           {items.map((c: any) => {

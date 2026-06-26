@@ -1,13 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
+from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timezone
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, require_tenant_id
 from app.models.user import User
 from app.models.deadline import Deadline
+from app.models.case import Case
 import uuid
 
 router = APIRouter(prefix="/deadlines", tags=["deadlines"])
@@ -42,6 +44,7 @@ def deadline_to_dict(d: Deadline) -> dict:
         "priority": d.priority, "due_date": d.due_date,
         "legal_basis": d.legal_basis,
         "is_completed": d.is_completed, "completed_at": d.completed_at,
+        "case_title": (d.case.title if d.case else None),
         "created_at": d.created_at.isoformat() if d.created_at else None,
     }
 
@@ -52,7 +55,7 @@ async def list_deadlines(
     page: int = Query(1, ge=1), limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
-    q = select(Deadline).where(Deadline.tenant_id == current_user.tenant_id)
+    q = select(Deadline).options(selectinload(Deadline.case)).where(Deadline.tenant_id == current_user.tenant_id)
     if is_completed is not None: q = q.where(Deadline.is_completed == is_completed)
     if case_id: q = q.where(Deadline.case_id == case_id)
     if priority: q = q.where(Deadline.priority == priority)
@@ -62,7 +65,8 @@ async def list_deadlines(
 
 @router.post("", status_code=201)
 async def create_deadline(data: DeadlineCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    d = Deadline(id=str(uuid.uuid4()), tenant_id=current_user.tenant_id, lawyer_id=current_user.id, **_clean_fks(data.model_dump(), "case_id"))
+    tenant_id = require_tenant_id(current_user)
+    d = Deadline(id=str(uuid.uuid4()), tenant_id=tenant_id, lawyer_id=current_user.id, **_clean_fks(data.model_dump(), "case_id"))
     db.add(d)
     await db.commit()
     return {"id": d.id, "message": "Plazo creado"}

@@ -80,6 +80,17 @@ async def get_current_active_tenant(
     return tenant
 
 
+def require_tenant_id(current_user: User) -> str:
+    """
+    Devuelve el tenant_id del usuario actual o lanza 400 si no tiene estudio asignado.
+    Evita el 500 (NotNullViolation) al crear entidades con un super admin / usuario sin estudio.
+    Uso: tenant_id = require_tenant_id(current_user)
+    """
+    if not current_user.tenant_id:
+        raise HTTPException(400, "Tu usuario no tiene un estudio asignado")
+    return current_user.tenant_id
+
+
 async def require_firm_admin(current_user: User = Depends(get_current_user)) -> User:
     """Solo FIRM_ADMIN, SOLO_LAWYER o SUPER_ADMIN pueden administrar el tenant."""
     allowed = (UserRole.FIRM_ADMIN, UserRole.SUPER_ADMIN, UserRole.SOLO_LAWYER)

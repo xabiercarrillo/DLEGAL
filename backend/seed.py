@@ -17,6 +17,14 @@ async def seed():
     from app.models.user import User, UserRole
     from app.models.library import LegalNorm
     from app.models.template import WritingTemplate
+    from app.models.client import Client
+    from app.models.case import Case, CaseStatus, CasePriority
+    from app.models.hearing import Hearing
+    from app.models.deadline import Deadline
+    from app.models.task import Task
+    from app.models.appointment import Appointment
+    from app.models.billing import Income, Expense, Invoice, InvoiceItem
+    from app.models.contact import ProfessionalContact
     from sqlalchemy import select
 
     # Crear todas las tablas
@@ -184,6 +192,116 @@ async def seed():
             ))
         db.add_all(tpl_objs)
         print(f"  ✅ {len(tpl_objs)} plantillas de escritos")
+
+        # ── DATOS DEMO (estudio en marcha) ────────────────────────────────
+        TID = demo_tenant_id
+        ab = abogado.id
+        ad = admin.id
+        def dd(days):  # fecha (YYYY-MM-DD)
+            return (now + timedelta(days=days)).strftime("%Y-%m-%d")
+        def dt(days, hour=9, minute=0):  # datetime ISO para scheduled_at
+            return (now + timedelta(days=days)).strftime(f"%Y-%m-%dT{hour:02d}:{minute:02d}:00")
+
+        # Clientes
+        cli = [
+            Client(id=str(uuid.uuid4()), tenant_id=TID, type="individual", full_name="María Benítez Rolón", document_type="ci", document_number="3456789", email="mbenitez@gmail.com", phone="0981 456 789", whatsapp="0981456789", city="Asunción", address="Barrio Las Mercedes, Asunción"),
+            Client(id=str(uuid.uuid4()), tenant_id=TID, type="company", full_name="Comercial del Este S.A.", document_type="ruc", ruc="80034521-7", document_number="80034521", email="contacto@comercialeste.com.py", phone="021 445 887", city="Ciudad del Este", address="Av. Monseñor Rodríguez 1450"),
+            Client(id=str(uuid.uuid4()), tenant_id=TID, type="individual", full_name="José Cardozo Giménez", document_type="ci", document_number="2987654", email="jcardozo@hotmail.com", phone="0985 221 340", city="Luque"),
+            Client(id=str(uuid.uuid4()), tenant_id=TID, type="company", full_name="Constructora Paraná S.R.L.", document_type="ruc", ruc="80019876-3", document_number="80019876", email="admin@constructoraparana.com.py", phone="021 612 009", city="Asunción", address="Av. Aviadores del Chaco 2050"),
+            Client(id=str(uuid.uuid4()), tenant_id=TID, type="individual", full_name="Rosa Mareco de Villalba", document_type="ci", document_number="1654320", email="rmareco@gmail.com", phone="0971 880 145", city="San Lorenzo"),
+            Client(id=str(uuid.uuid4()), tenant_id=TID, type="individual", full_name="Hugo Acosta Benítez", document_type="ci", document_number="4123567", email="hacosta@gmail.com", phone="0982 334 210", city="Capiatá"),
+        ]
+        db.add_all(cli)
+        await db.flush()
+
+        # Casos
+        cs = [
+            Case(id=str(uuid.uuid4()), tenant_id=TID, reference="EXP-2026-0001", title="Benítez c/ Comercial del Este s/ Cobro de Guaraníes", matter="civil", status=CaseStatus.ACTIVE, priority=CasePriority.HIGH, client_id=cli[0].id, lawyer_id=ab, court="Juzgado Civil y Comercial 3º Turno", court_file_number="1.234/2026", opposing_party="Comercial del Este S.A.", agreed_fee=15000000, opened_at=dd(-40), description="Cobro de guaraníes por incumplimiento contractual de provisión de mercaderías."),
+            Case(id=str(uuid.uuid4()), tenant_id=TID, reference="EXP-2026-0002", title="Sucesión Ramírez Villalba", matter="sucesiones", status=CaseStatus.INVESTIGATION, priority=CasePriority.MEDIUM, client_id=cli[4].id, lawyer_id=ab, court="Juzgado en lo Civil 1º Turno", court_file_number="876/2026", opened_at=dd(-25), description="Juicio sucesorio intestado. Declaratoria de herederos."),
+            Case(id=str(uuid.uuid4()), tenant_id=TID, reference="EXP-2026-0003", title="Acosta c/ Constructora Paraná s/ Despido Injustificado", matter="laboral", status=CaseStatus.TRIAL, priority=CasePriority.URGENT, client_id=cli[5].id, lawyer_id=ab, court="Juzgado Laboral 2º Turno", court_file_number="445/2026", opposing_party="Constructora Paraná S.R.L.", agreed_fee=8000000, opened_at=dd(-60), description="Demanda laboral por despido injustificado. Liquidación Ley 213/93."),
+            Case(id=str(uuid.uuid4()), tenant_id=TID, reference="EXP-2026-0004", title="Cardozo s/ Divorcio Vincular", matter="familia", status=CaseStatus.NEGOTIATION, priority=CasePriority.MEDIUM, client_id=cli[2].id, lawyer_id=ab, court="Juzgado de la Niñez 1º Turno", opened_at=dd(-15), description="Divorcio vincular por presentación conjunta. Régimen de relacionamiento."),
+            Case(id=str(uuid.uuid4()), tenant_id=TID, reference="EXP-2026-0005", title="Constructora Paraná c/ Municipalidad s/ Contencioso", matter="administrativo", status=CaseStatus.NEW, priority=CasePriority.LOW, client_id=cli[3].id, lawyer_id=ab, opened_at=dd(-5), description="Recurso contencioso administrativo contra resolución municipal."),
+            Case(id=str(uuid.uuid4()), tenant_id=TID, reference="EXP-2025-0188", title="Mareco s/ Usucapión", matter="civil", status=CaseStatus.CLOSED_WON, priority=CasePriority.MEDIUM, client_id=cli[4].id, lawyer_id=ab, court="Juzgado Civil 4º Turno", agreed_fee=12000000, opened_at=dd(-200), description="Prescripción adquisitiva de dominio. Sentencia favorable."),
+        ]
+        db.add_all(cs)
+        await db.flush()
+
+        # Audiencias próximas
+        db.add_all([
+            Hearing(id=str(uuid.uuid4()), tenant_id=TID, case_id=cs[0].id, lawyer_id=ab, type="conciliacion", status="programada", title="Audiencia de conciliación - Benítez c/ Comercial del Este", scheduled_at=dt(3, 8, 30), court="Juzgado Civil y Comercial 3º Turno", room="Sala 2", judge="Dra. Liliana Ortiz"),
+            Hearing(id=str(uuid.uuid4()), tenant_id=TID, case_id=cs[2].id, lawyer_id=ab, type="juicio_oral", status="programada", title="Audiencia de vista de causa - Acosta laboral", scheduled_at=dt(6, 10, 0), court="Juzgado Laboral 2º Turno", room="Sala 1", judge="Dr. Ramón Espínola"),
+            Hearing(id=str(uuid.uuid4()), tenant_id=TID, case_id=cs[1].id, lawyer_id=ab, type="ordinaria", status="programada", title="Apertura de causa sucesoria - Ramírez Villalba", scheduled_at=dt(12, 9, 0), court="Juzgado Civil 1º Turno", judge="Dra. Mónica Báez"),
+            Hearing(id=str(uuid.uuid4()), tenant_id=TID, case_id=cs[3].id, lawyer_id=ab, type="ordinaria", status="programada", title="Ratificación de convenio - Divorcio Cardozo", scheduled_at=dt(18, 11, 0), court="Juzgado de la Niñez 1º Turno"),
+        ])
+
+        # Plazos
+        db.add_all([
+            Deadline(id=str(uuid.uuid4()), tenant_id=TID, case_id=cs[2].id, lawyer_id=ab, title="Vencimiento plazo para ofrecer pruebas", type="procesal", priority="urgent", due_date=dd(2), legal_basis="Art. 245 CPT"),
+            Deadline(id=str(uuid.uuid4()), tenant_id=TID, case_id=cs[0].id, lawyer_id=ab, title="Contestar traslado de la demanda", type="procesal", priority="high", due_date=dd(5), legal_basis="Art. 133 CPC (18 días hábiles)"),
+            Deadline(id=str(uuid.uuid4()), tenant_id=TID, case_id=cs[4].id, lawyer_id=ab, title="Interponer recurso de apelación", type="procesal", priority="high", due_date=dd(8), legal_basis="Art. 397 CPC (5 días)"),
+            Deadline(id=str(uuid.uuid4()), tenant_id=TID, case_id=cs[1].id, lawyer_id=ab, title="Presentar inventario de bienes", type="procesal", priority="medium", due_date=dd(20)),
+            Deadline(id=str(uuid.uuid4()), tenant_id=TID, case_id=cs[5].id, lawyer_id=ab, title="Inscripción de sentencia en Registro Público", type="administrativo", priority="low", due_date=dd(-10), is_completed=True, completed_at=dd(-12)),
+        ])
+
+        # Tareas
+        db.add_all([
+            Task(id=str(uuid.uuid4()), tenant_id=TID, case_id=cs[0].id, assigned_to=ab, created_by=ad, title="Redactar escrito de contestación de demanda", status="pendiente", priority="high", due_date=dd(4)),
+            Task(id=str(uuid.uuid4()), tenant_id=TID, case_id=cs[2].id, assigned_to=ab, created_by=ad, title="Preparar liquidación laboral Ley 213/93", status="en_proceso", priority="urgent", due_date=dd(1)),
+            Task(id=str(uuid.uuid4()), tenant_id=TID, case_id=cs[1].id, assigned_to=ab, created_by=ad, title="Solicitar certificado de defunción y partidas", status="pendiente", priority="medium", due_date=dd(7)),
+            Task(id=str(uuid.uuid4()), tenant_id=TID, case_id=cs[3].id, assigned_to=ab, created_by=ad, title="Reunión con cliente para firma de convenio", status="pendiente", priority="medium", due_date=dd(2)),
+            Task(id=str(uuid.uuid4()), tenant_id=TID, assigned_to=ab, created_by=ad, title="Renovar timbrado ante la SET", status="pendiente", priority="low", due_date=dd(15)),
+            Task(id=str(uuid.uuid4()), tenant_id=TID, case_id=cs[5].id, assigned_to=ab, created_by=ad, title="Archivar expediente concluido", status="completada", priority="low"),
+        ])
+
+        # Citas
+        db.add_all([
+            Appointment(id=str(uuid.uuid4()), tenant_id=TID, client_id=cli[0].id, case_id=cs[0].id, lawyer_id=ab, type="seguimiento", status="programada", title="Seguimiento de caso - María Benítez", scheduled_at=dt(1, 15, 0), location="Oficina - Av. Mcal. López 1234", fee=0),
+            Appointment(id=str(uuid.uuid4()), tenant_id=TID, client_id=cli[5].id, case_id=cs[2].id, lawyer_id=ab, type="consulta_inicial", status="programada", title="Consulta - Hugo Acosta", scheduled_at=dt(2, 9, 30), location="Oficina", fee=150000),
+            Appointment(id=str(uuid.uuid4()), tenant_id=TID, client_id=cli[3].id, lawyer_id=ab, type="reunion", status="programada", title="Reunión Constructora Paraná", scheduled_at=dt(4, 16, 0), location="Videollamada Zoom"),
+            Appointment(id=str(uuid.uuid4()), tenant_id=TID, client_id=cli[2].id, case_id=cs[3].id, lawyer_id=ab, type="firma", status="programada", title="Firma de convenio de divorcio", scheduled_at=dt(8, 10, 0), location="Oficina"),
+        ])
+
+        # Ingresos (created_at = ahora → cuentan para el mes)
+        db.add_all([
+            Income(id=str(uuid.uuid4()), tenant_id=TID, client_id=cli[0].id, case_id=cs[0].id, description="Anticipo de honorarios - Caso Benítez", amount=5000000, income_date=dd(-2), category="honorarios", payment_method="transferencia", lawyer_id=ab),
+            Income(id=str(uuid.uuid4()), tenant_id=TID, client_id=cli[5].id, case_id=cs[2].id, description="Honorarios consulta laboral", amount=150000, income_date=dd(-1), category="honorarios", payment_method="efectivo", lawyer_id=ab),
+            Income(id=str(uuid.uuid4()), tenant_id=TID, client_id=cli[4].id, case_id=cs[5].id, description="Honorarios por usucapión (éxito)", amount=12000000, income_date=dd(-6), category="honorarios", payment_method="transferencia", lawyer_id=ab),
+            Income(id=str(uuid.uuid4()), tenant_id=TID, client_id=cli[3].id, description="Iguala mensual Constructora Paraná", amount=3000000, income_date=dd(-9), category="iguala", payment_method="transferencia", lawyer_id=ab),
+        ])
+
+        # Gastos
+        db.add_all([
+            Expense(id=str(uuid.uuid4()), tenant_id=TID, case_id=cs[0].id, description="Tasa judicial y aranceles", amount=450000, expense_date=dd(-3), category="judicial", is_reimbursable=True),
+            Expense(id=str(uuid.uuid4()), tenant_id=TID, description="Alquiler de oficina", amount=2500000, expense_date=dd(-5), category="oficina"),
+            Expense(id=str(uuid.uuid4()), tenant_id=TID, case_id=cs[2].id, description="Honorarios de perito contable", amount=1200000, expense_date=dd(-4), category="peritos", is_reimbursable=True),
+            Expense(id=str(uuid.uuid4()), tenant_id=TID, description="Servicios (luz, internet, agua)", amount=680000, expense_date=dd(-6), category="servicios"),
+        ])
+
+        # Facturas
+        inv1_id = str(uuid.uuid4())
+        inv1 = Invoice(id=inv1_id, tenant_id=TID, client_id=cli[0].id, case_id=cs[0].id, invoice_type="B", number="001-001-0000123", timbrado="12345678", status="cobrada", subtotal=4545455, iva_rate=10, iva_amount=454545, total=5000000, paid_amount=5000000, balance=0, issued_at=dd(-2), paid_at=dd(-1))
+        inv2_id = str(uuid.uuid4())
+        inv2 = Invoice(id=inv2_id, tenant_id=TID, client_id=cli[3].id, invoice_type="B", number="001-001-0000124", timbrado="12345678", status="emitida", subtotal=2727273, iva_rate=10, iva_amount=272727, total=3000000, balance=3000000, issued_at=dd(-9), due_date=dd(6))
+        inv3_id = str(uuid.uuid4())
+        inv3 = Invoice(id=inv3_id, tenant_id=TID, client_id=cli[1].id, invoice_type="B", number="001-001-0000125", timbrado="12345678", status="vencida", subtotal=9090909, iva_rate=10, iva_amount=909091, total=10000000, balance=10000000, issued_at=dd(-45), due_date=dd(-15))
+        db.add_all([inv1, inv2, inv3])
+        await db.flush()
+        db.add_all([
+            InvoiceItem(id=str(uuid.uuid4()), invoice_id=inv1_id, description="Anticipo de honorarios profesionales", quantity=1, unit_price=5000000, amount=5000000),
+            InvoiceItem(id=str(uuid.uuid4()), invoice_id=inv2_id, description="Iguala mensual de asesoría", quantity=1, unit_price=3000000, amount=3000000),
+            InvoiceItem(id=str(uuid.uuid4()), invoice_id=inv3_id, description="Honorarios juicio de cobro", quantity=1, unit_price=10000000, amount=10000000),
+        ])
+
+        # Contactos profesionales
+        db.add_all([
+            ProfessionalContact(id=str(uuid.uuid4()), tenant_id=TID, name="Dra. Liliana Ortiz", type="juez", specialty="Civil y Comercial", court="Juzgado Civil y Comercial 3º Turno", phone="021 445 100", is_favorite=True),
+            ProfessionalContact(id=str(uuid.uuid4()), tenant_id=TID, name="Dr. Ramón Espínola", type="juez", specialty="Laboral", court="Juzgado Laboral 2º Turno", phone="021 445 220"),
+            ProfessionalContact(id=str(uuid.uuid4()), tenant_id=TID, name="Lic. Andrés Florentín", type="perito", specialty="Perito Contador", phone="0981 553 410", email="aflorentin@peritos.com.py", is_favorite=True),
+            ProfessionalContact(id=str(uuid.uuid4()), tenant_id=TID, name="Esc. Patricia Ayala", type="notario", specialty="Escribana Pública", address="Estrella 765, Asunción", phone="021 490 332"),
+            ProfessionalContact(id=str(uuid.uuid4()), tenant_id=TID, name="Dr. Marcos Riveros", type="colega", specialty="Derecho Penal", phone="0985 110 887", email="mriveros@abogados.com.py"),
+        ])
+
+        print("  ✅ Datos demo: 6 clientes, 6 casos, 4 audiencias, 5 plazos, 6 tareas, 4 citas, 4 ingresos, 4 gastos, 3 facturas, 5 contactos")
 
         await db.commit()
 

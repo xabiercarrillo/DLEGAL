@@ -1,4 +1,4 @@
-# XLegal v2.0.0 — Sistema de Gestión Jurídica Paraguay 🇵🇾
+# DLEGAL v2.0.0 — Sistema de Gestión Jurídica Paraguay 🇵🇾
 
 > Software de gestión jurídica multi-tenant diseñado específicamente para abogados y estudios jurídicos del Paraguay.
 
@@ -42,7 +42,7 @@ SECRET_KEY=genera-clave-aleatoria-de-64-chars-aqui
 
 # Super Admin
 FIRST_SUPERUSER_EMAIL=xabiercarrillo@gmail.com
-FIRST_SUPERUSER_PASSWORD=XLegal
+FIRST_SUPERUSER_PASSWORD=DLEGAL
 
 # Email (Resend - https://resend.com — plan free: 3.000 emails/mes)
 RESEND_API_KEY=re_xxxxxxxxxxxx
@@ -76,7 +76,7 @@ curl http://localhost/health  # debe responder JSON
 
 | Usuario | Email | Contraseña | Rol |
 |---------|-------|------------|-----|
-| Super Admin | xabiercarrillo@gmail.com | XLegal | Super Admin |
+| Super Admin | xabiercarrillo@gmail.com | DLEGAL | Super Admin |
 | Demo Admin | admin@xlegal.com.py | Admin2024! | Firm Admin |
 | Demo Abogado | abogado@demo.com.py | Demo2024! | Lawyer |
 
@@ -177,7 +177,7 @@ certbot --nginx -d app.xlegal.com.py
 
 ---
 
-*XLegal v2.0.0 — Paraguay 🇵🇾 | © 2024*
+*DLEGAL v2.0.0 — Paraguay 🇵🇾 | © 2024*
 
 ---
 

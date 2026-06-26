@@ -1,5 +1,7 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { formatPYG } from '@/lib/utils'
@@ -95,6 +97,18 @@ export default function AccountingPage() {
 
   return (
     <AppLayout title="Contabilidad — Libro Diario">
+      <PageHeader
+        icon={BookOpen}
+        title="Contabilidad"
+        description="Asientos y resumen contable del estudio."
+        actions={
+          <button onClick={() => { setForm({ ...EMPTY, entry_date: new Date().toISOString().slice(0,10) }); setShowForm(true) }}
+            className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm flex-shrink-0">
+            <Plus className="w-4 h-4" strokeWidth={1.7} />Nuevo asiento
+          </button>
+        }
+      />
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
         <div className="bg-ink-900 rounded-2xl p-5 text-white">
@@ -161,33 +175,35 @@ export default function AccountingPage() {
               <FileText className="w-3.5 h-3.5" strokeWidth={1.7} />CSV
             </button>
           )}
-          <button onClick={() => { setForm({ ...EMPTY, entry_date: new Date().toISOString().slice(0,10) }); setShowForm(true) }}
-            className="flex items-center gap-2 bg-ink-900 text-white px-4 py-2.5 rounded-full text-sm font-semibold hover:bg-ink-800 active:scale-[0.98] ease-fluid transition">
-            <Plus className="w-4 h-4" strokeWidth={1.7} />Nuevo asiento
-          </button>
         </div>
       </div>
 
       {/* Libro diario table */}
       {isLoading ? (
-        <div className="space-y-2">{[...Array(5)].map((_,i) => <div key={i} className="h-14 bg-white rounded-2xl animate-pulse ring-1 ring-ink-900/[0.06]" />)}</div>
+        <div className="space-y-2">{[...Array(5)].map((_,i) => <div key={i} className="h-14 bg-ink-900/[0.04] rounded-2xl animate-pulse ring-1 ring-ink-900/[0.06]" />)}</div>
       ) : entries.length === 0 ? (
-        <div className="bg-white rounded-2xl p-16 text-center ring-1 ring-ink-900/[0.06] shadow-tinted-sm">
-          <BookOpen className="w-10 h-10 text-ink-200 mx-auto mb-3" strokeWidth={1.7} />
-          <p className="text-ink-400 font-medium">Sin asientos contables</p>
-          <button onClick={() => setShowForm(true)} className="mt-3 text-sm text-ink-900 hover:underline font-medium">+ Registrar primer asiento</button>
-        </div>
+        <EmptyState
+          icon={BookOpen}
+          title={monthF ? 'Sin asientos en el período' : 'Sin asientos contables'}
+          description={monthF ? 'No hay movimientos registrados en el período seleccionado.' : 'Registrá tu primer asiento para llevar el libro diario del estudio al día.'}
+          action={
+            <button onClick={() => { setForm({ ...EMPTY, entry_date: new Date().toISOString().slice(0,10) }); setShowForm(true) }}
+              className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+              <Plus className="w-4 h-4" strokeWidth={1.7} />Registrar primer asiento
+            </button>
+          }
+        />
       ) : (
         <div className="bg-white rounded-2xl ring-1 ring-ink-900/[0.06] shadow-tinted-sm overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-paper border-b border-ink-900/[0.06]">
+            <thead className="bg-paper-deep/50 border-b border-ink-900/[0.06]">
               <tr>
                 {['Fecha','Concepto','Debe','Haber','Monto','Ref.',''].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-ink-400 uppercase tracking-wide">{h}</th>
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-ink-500 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-ink-900/[0.05]">
+            <tbody className="divide-y divide-ink-900/[0.06]">
               {entries.map((e: any) => (
                 <tr key={e.id} className="hover:bg-ink-900/[0.02] transition group">
                   <td className="px-4 py-3 text-xs text-ink-500 whitespace-nowrap tnum">{e.entry_date}</td>
@@ -205,7 +221,7 @@ export default function AccountingPage() {
                 </tr>
               ))}
             </tbody>
-            <tfoot className="bg-paper border-t border-ink-900/[0.06]">
+            <tfoot className="bg-paper-deep/50 border-t border-ink-900/[0.06]">
               <tr>
                 <td colSpan={4} className="px-4 py-3 text-xs font-semibold text-ink-500 uppercase">Total período</td>
                 <td className="px-4 py-3 font-semibold text-ink-900 tnum">{formatPYG(entries.reduce((s: number, e: any) => s + (e.amount||0), 0))}</td>

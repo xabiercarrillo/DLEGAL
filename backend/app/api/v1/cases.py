@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 from pydantic import BaseModel
 from typing import Optional
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, require_tenant_id
 from app.models.user import User
 from app.models.case import Case, CaseStatus, CasePriority
 from app.models.client import Client
@@ -64,7 +64,7 @@ async def list_cases(
     status: Optional[str] = None,
     matter: Optional[str] = None,
     page: int = Query(1, ge=1),
-    limit: int = Query(20, ge=1, le=100),
+    limit: int = Query(20, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -178,16 +178,17 @@ async def get_case_detail(case_id: str, db: AsyncSession = Depends(get_db), curr
 
 @router.post("", status_code=201)
 async def create_case(data: CaseCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
+    tenant_id = require_tenant_id(current_user)
     year = datetime.now().year
     count_result = await db.execute(
-        select(func.count()).where(Case.tenant_id == current_user.tenant_id)
+        select(func.count()).where(Case.tenant_id == tenant_id)
     )
     count = (count_result.scalar() or 0) + 1
     reference = f"EXP-{year}-{count:04d}"
 
     case = Case(
         id=str(uuid.uuid4()),
-        tenant_id=current_user.tenant_id,
+        tenant_id=tenant_id,
         reference=reference,
         lawyer_id=current_user.id,
         **data.model_dump(exclude_none=True),

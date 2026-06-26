@@ -1,5 +1,7 @@
 'use client'
 import AppLayout from '@/components/layout/AppLayout'
+import PageHeader from '@/components/ui/PageHeader'
+import EmptyState from '@/components/ui/EmptyState'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { templatesApi } from '@/lib/api'
 import { useState } from 'react'
@@ -79,8 +81,19 @@ export default function TemplatesPage() {
 
   return (
     <AppLayout title="Modelos de Escritos">
-      <div className="flex flex-wrap items-center gap-3 mb-6">
-        <div className="relative flex-1 min-w-48">
+      <PageHeader
+        icon={FileText}
+        title="Modelos de Escritos"
+        description="Plantillas de escritos y documentos reutilizables."
+        actions={
+          <button onClick={() => { setForm({...EMPTY_FORM}); setEditing(null); setModal('create') }}
+            className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+            <Plus strokeWidth={1.7} className="w-4 h-4" /> Nuevo modelo
+          </button>
+        }
+      />
+      <div className="mb-6 flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-48 max-w-sm">
           <Search strokeWidth={1.7} className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
           <input placeholder="Buscar modelo..." value={search} onChange={e => setSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition" />
@@ -93,19 +106,33 @@ export default function TemplatesPage() {
             </button>
           ))}
         </div>
-        <button onClick={() => { setForm({...EMPTY_FORM}); setEditing(null); setModal('create') }}
-          className="flex items-center gap-2 bg-ink-900 text-white px-4 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition ease-fluid ml-auto">
-          <Plus strokeWidth={1.7} className="w-4 h-4" /> Nuevo modelo
-        </button>
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">{[...Array(6)].map((_,i)=><div key={i} className="h-32 bg-white rounded-2xl animate-pulse ring-1 ring-ink-900/[0.06]" />)}</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{[...Array(6)].map((_,i)=>(
+          <div key={i} className="bg-white rounded-2xl p-5 ring-1 ring-ink-900/[0.06] shadow-tinted-sm">
+            <div className="w-10 h-10 rounded-xl bg-ink-900/[0.04] animate-pulse mb-3" />
+            <div className="h-4 w-3/4 rounded bg-ink-900/[0.04] animate-pulse mb-2" />
+            <div className="h-3 w-full rounded bg-ink-900/[0.04] animate-pulse mb-1.5" />
+            <div className="h-3 w-2/3 rounded bg-ink-900/[0.04] animate-pulse mb-4" />
+            <div className="flex gap-2">
+              <div className="h-5 w-14 rounded-lg bg-ink-900/[0.04] animate-pulse" />
+              <div className="h-5 w-16 rounded-lg bg-ink-900/[0.04] animate-pulse" />
+            </div>
+          </div>
+        ))}</div>
       ) : items.length === 0 ? (
-        <div className="bg-white ring-1 ring-ink-900/[0.06] shadow-tinted-sm rounded-2xl p-16 text-center">
-          <FileText strokeWidth={1.7} className="w-12 h-12 text-ink-200 mx-auto mb-3" />
-          <p className="text-ink-500">Sin modelos de escritos</p>
-        </div>
+        <EmptyState
+          icon={FileText}
+          title={search || catFilter ? 'Sin resultados' : 'Sin modelos de escritos'}
+          description={search || catFilter ? 'No encontramos modelos que coincidan con los filtros aplicados.' : 'Creá tu primer modelo de escrito reutilizable para agilizar la redacción de tus documentos.'}
+          action={
+            <button onClick={() => { setForm({...EMPTY_FORM}); setEditing(null); setModal('create') }}
+              className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid shadow-tinted-sm">
+              <Plus strokeWidth={1.7} className="w-4 h-4" /> Crear primer modelo
+            </button>
+          }
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {items.map(t => (
@@ -172,8 +199,9 @@ export default function TemplatesPage() {
                   <p className="text-xs text-ink-400 mt-3 text-center">Los marcadores [ENTRE CORCHETES] deben reemplazarse con los datos del caso</p>
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-32">
-                  <div className="w-6 h-6 border-2 border-ink-900 border-t-transparent rounded-full animate-spin" />
+                <div className="space-y-2.5">
+                  <div className="h-9 w-44 rounded-full bg-ink-900/[0.04] animate-pulse ml-auto" />
+                  <div className="rounded-xl bg-ink-900/[0.04] animate-pulse h-72" />
                 </div>
               )}
             </div>
