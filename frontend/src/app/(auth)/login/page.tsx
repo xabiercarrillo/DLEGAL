@@ -43,15 +43,14 @@ function LoginForm() {
     <div className="min-h-[100dvh] lg:grid lg:grid-cols-[1.05fr_1fr] bg-paper">
       {/* ── Panel de marca: sello de ñandutí ── */}
       <aside className="relative hidden lg:flex flex-col justify-between overflow-hidden bg-ink-950 p-12 xl:p-16">
-        {/* Filigrana ñandutí gigante */}
-        <Nanduti
-          size={760}
-          spokes={24}
-          rings={6}
-          strokeWidth={0.4}
-          className="pointer-events-none absolute -right-48 -bottom-48 text-brass-400/[0.13] animate-spin-slow"
+        {/* Foto de biblioteca jurídica con overlay para legibilidad */}
+        <img
+          src="https://images.unsplash.com/photo-1505664194779-8beaceb93744?w=1400&q=80&auto=format&fit=crop"
+          alt=""
+          className="absolute inset-0 -z-20 h-full w-full object-cover opacity-30"
         />
-        <div className="pointer-events-none absolute -top-28 -left-24 h-[26rem] w-[26rem] rounded-full bg-[radial-gradient(circle,rgba(147,48,42,0.22),transparent_65%)]" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-ink-950/85 via-ink-950/92 to-ink-950" />
+        <div className="pointer-events-none absolute -top-28 -left-24 h-[26rem] w-[26rem] rounded-full bg-[radial-gradient(circle,rgba(147,48,42,0.30),transparent_65%)]" />
 
         <Link href="/" className="relative inline-flex w-max">
           <Logo size={46} dark textSize="text-2xl" />

@@ -6,6 +6,7 @@ import { CASE_STATUS, MATTER, formatDate, formatPYG, daysUntil, urgencyBadge } f
 import { useState } from 'react'
 import { Briefcase, Plus, X, Search, ChevronRight, Scale, Clock, CheckSquare, DollarSign, AlertTriangle, Archive, Edit3 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { validate, ruleRequired, ruleNonNegativeOptional } from '@/lib/validation'
 
 const STATUS_OPTS = Object.entries(CASE_STATUS)
 const MATTER_OPTS = Object.entries(MATTER)
@@ -21,6 +22,12 @@ export default function CasesPage() {
   const [selected, setSelected] = useState<any>(null)
   const [detailCase, setDetailCase] = useState<any>(null)
   const [detailTab, setDetailTab] = useState('info')
+  const [errors, setErrors] = useState<Record<string,string>>({})
+
+  const setField = (k: string, v: any) => {
+    setForm({ ...form, [k]: v })
+    if (errors[k]) setErrors(prev => { const n = { ...prev }; delete n[k]; return n })
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['cases', search, statusFilter, matterFilter],
@@ -52,13 +59,20 @@ export default function CasesPage() {
   })
 
   const save = () => {
-    if (!form.title) return toast.error('Titulo requerido')
+    const errs = validate({
+      title: { value: form.title, rules: [ruleRequired('El título es requerido')] },
+      agreed_fee: { value: form.agreed_fee, rules: [ruleNonNegativeOptional('El honorario no puede ser negativo')] },
+    })
+    if (Object.keys(errs).length) { setErrors(errs); toast.error('Revisá los campos marcados'); return }
+    setErrors({})
     const payload = { ...form, agreed_fee: form.agreed_fee ? parseFloat(form.agreed_fee) : undefined }
     if (modal === 'create') createMut.mutate(payload)
     else if (selected) updateMut.mutate({ id: selected.id, d: payload })
   }
 
   const inp = 'w-full px-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition'
+  const inpErr = 'w-full px-3 py-2.5 bg-white ring-1 ring-rose-400 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 transition'
+  const err = (f: string) => errors[f] ? inpErr : inp
   const lbl = 'block text-xs font-semibold text-ink-600 mb-1'
   const pending = createMut.isPending || updateMut.isPending
 
@@ -85,7 +99,7 @@ export default function CasesPage() {
           <option value="">Todas las materias</option>
           {MATTER_OPTS.map(([k,v]) => <option key={k} value={k}>{v}</option>)}
         </select>
-        <button onClick={() => { setSelected(null); setForm({...EMPTY}); setModal('create') }}
+        <button onClick={() => { setSelected(null); setForm({...EMPTY}); setErrors({}); setModal('create') }}
           className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid ml-auto">
           <Plus strokeWidth={1.7} className="w-4 h-4" /> Nuevo Caso
         </button>
@@ -139,7 +153,7 @@ export default function CasesPage() {
               <button onClick={() => setModal(null)}><X strokeWidth={1.7} className="w-5 h-5 text-ink-400" /></button>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2"><label className={lbl}>Título del Caso *</label><input className={inp} value={form.title||''} onChange={e=>setForm({...form,title:e.target.value})} placeholder="Ej: González c/ Empresa XYZ — Laboral"/></div>
+              <div className="col-span-2"><label className={lbl}>Título del Caso *</label><input className={err('title')} value={form.title||''} onChange={e=>setField('title',e.target.value)} placeholder="Ej: González c/ Empresa XYZ — Laboral"/>{errors.title && <p className="mt-1 text-xs text-rose-600">{errors.title}</p>}</div>
               <div><label className={lbl}>Materia</label>
                 <select className={inp} value={form.matter||'civil'} onChange={e=>setForm({...form,matter:e.target.value})}>
                   {MATTER_OPTS.map(([k,v])=><option key={k} value={k}>{v}</option>)}
@@ -159,7 +173,7 @@ export default function CasesPage() {
               <div><label className={lbl}>Parte contraria</label><input className={inp} value={form.opposing_party||''} onChange={e=>setForm({...form,opposing_party:e.target.value})} placeholder="Empresa ABC S.A."/></div>
               <div><label className={lbl}>Juzgado / Tribunal</label><input className={inp} value={form.court||''} onChange={e=>setForm({...form,court:e.target.value})} placeholder="1er Juzgado Civil"/></div>
               <div><label className={lbl}>Nro. Expediente</label><input className={inp} value={form.court_file_number||''} onChange={e=>setForm({...form,court_file_number:e.target.value})} placeholder="EXP-2024-0001"/></div>
-              <div className="col-span-2"><label className={lbl}>Honorario acordado (Gs.)</label><input type="number" className={inp} value={form.agreed_fee||''} onChange={e=>setForm({...form,agreed_fee:e.target.value})} placeholder="0"/></div>
+              <div className="col-span-2"><label className={lbl}>Honorario acordado (Gs.)</label><input type="number" min="0" className={err('agreed_fee')} value={form.agreed_fee||''} onChange={e=>setField('agreed_fee',e.target.value)} placeholder="0"/>{errors.agreed_fee && <p className="mt-1 text-xs text-rose-600">{errors.agreed_fee}</p>}</div>
               <div className="col-span-2"><label className={lbl}>Descripción</label><textarea rows={3} className={inp} value={form.description||''} onChange={e=>setForm({...form,description:e.target.value})} placeholder="Descripcion del caso..."/></div>
               <div className="col-span-2"><label className={lbl}>Notas internas</label><textarea rows={2} className={inp} value={form.notes||''} onChange={e=>setForm({...form,notes:e.target.value})}/></div>
             </div>
@@ -196,7 +210,7 @@ export default function CasesPage() {
                   )}
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
-                  <button onClick={() => { setSelected(caseDetail || detailCase); setForm({...(caseDetail || detailCase), agreed_fee: (caseDetail || detailCase).agreed_fee || ''}); setModal('edit'); setDetailCase(null) }}
+                  <button onClick={() => { setSelected(caseDetail || detailCase); setForm({...(caseDetail || detailCase), agreed_fee: (caseDetail || detailCase).agreed_fee || ''}); setErrors({}); setModal('edit'); setDetailCase(null) }}
                     className="px-3 py-2 bg-white/20 hover:bg-white/30 text-white rounded-full text-xs font-medium transition">Editar</button>
                   <button onClick={() => setDetailCase(null)} className="p-2 hover:bg-white/20 rounded-xl transition"><X strokeWidth={1.7} className="w-5 h-5" /></button>
                 </div>
@@ -314,7 +328,7 @@ export default function CasesPage() {
                 className="flex items-center gap-2 px-4 py-2 ring-1 ring-ink-900/10 text-ink-600 rounded-full text-sm hover:bg-ink-900/5 transition">
                 <Archive strokeWidth={1.7} className="w-4 h-4"/> Archivar
               </button>
-              <button onClick={() => { setSelected(caseDetail || detailCase); setForm({...(caseDetail || detailCase), agreed_fee: (caseDetail || detailCase).agreed_fee || '', client_id: (caseDetail || detailCase).client_id || ''}); setModal('edit'); setDetailCase(null) }}
+              <button onClick={() => { setSelected(caseDetail || detailCase); setForm({...(caseDetail || detailCase), agreed_fee: (caseDetail || detailCase).agreed_fee || '', client_id: (caseDetail || detailCase).client_id || ''}); setErrors({}); setModal('edit'); setDetailCase(null) }}
                 className="flex-1 flex items-center justify-center gap-2 py-2 bg-ink-900 text-white rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid">
                 <Edit3 strokeWidth={1.7} className="w-4 h-4" /> Editar Caso
               </button>

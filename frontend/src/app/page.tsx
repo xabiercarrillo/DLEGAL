@@ -14,17 +14,19 @@ const PLANS = [
   { key: 'bufete_l', name: 'Buffet L', price: 'Consultar', period: '',     users: 'Ilimitado',          badge: '',            features: ['Usuarios ilimitados', 'Servidor dedicado', 'Onboarding personalizado', 'SLA garantizado', 'Integración contable'] },
 ]
 
+const IMG = (id: string, w = 800) => `https://images.unsplash.com/photo-${id}?w=${w}&q=80&auto=format&fit=crop`
+
 const MODULES = [
-  { icon: Gavel,      label: 'Casos y expedientes',    desc: 'Seguimiento completo con plazos automáticos' },
-  { icon: FileText,   label: 'Facturación SET',         desc: 'Facturas con timbrado, IVA 10%, exportación' },
-  { icon: Calculator, label: 'Calculadora Ley 213/93',  desc: 'Liquidaciones laborales exactas, preaviso, aguinaldo' },
-  { icon: BarChart3,  label: 'Reportes y estadísticas', desc: 'KPIs de tu estudio en tiempo real' },
-  { icon: BookOpen,   label: 'Biblioteca jurídica',     desc: 'Legislación y jurisprudencia paraguaya' },
-  { icon: Zap,        label: 'LEXI — asistente IA',     desc: 'Análisis de contratos, borradores, búsqueda legal' },
-  { icon: Users,      label: 'Portal del cliente',      desc: 'Acceso seguro para tus clientes a sus casos' },
-  { icon: Lock,       label: 'Firma electrónica',       desc: 'Documentos firmados digitalmente, válidos legalmente' },
-  { icon: TrendingUp, label: 'Cobranzas',               desc: 'Gestión de facturas vencidas y recordatorios auto.' },
-  { icon: Shield,     label: 'Multi-usuario',           desc: 'Roles: admin, abogado, secretaria, cliente' },
+  { label: 'Casos y expedientes',    desc: 'Seguimiento completo con plazos procesales automáticos y foliado digital.', img: IMG('1589216532372-1c2a367900d9', 1200) },
+  { label: 'Facturación SET',         desc: 'Facturas con timbrado, IVA 10% y exportación lista para tu contador.',     img: IMG('1554224154-26032ffc0d07') },
+  { label: 'Calculadora Ley 213/93',  desc: 'Liquidaciones laborales exactas: preaviso, aguinaldo y vacaciones.',       img: IMG('1554224155-6726b3ff858f') },
+  { label: 'Reportes y estadísticas', desc: 'Los indicadores de tu estudio, en tiempo real.',                           img: IMG('1551288049-bebda4e38f71') },
+  { label: 'Biblioteca jurídica',     desc: 'Legislación y jurisprudencia paraguaya, siempre a mano.',                  img: IMG('1521587760476-6c12a4b040da') },
+  { label: 'LEXI — asistente IA',     desc: 'Análisis de contratos, borradores y búsqueda legal con IA.',               img: IMG('1551836022-d5d88e9218df') },
+  { label: 'Portal del cliente',      desc: 'Acceso seguro para que tus clientes vean el avance de sus casos.',         img: IMG('1521791136064-7986c2920216') },
+  { label: 'Firma electrónica',       desc: 'Documentos firmados digitalmente, con plena validez legal.',               img: IMG('1450101499163-c8848c66ca85') },
+  { label: 'Cobranzas',               desc: 'Facturas vencidas y recordatorios automáticos por WhatsApp.',              img: IMG('1565514020179-026b92b84bb6') },
+  { label: 'Multi-usuario',           desc: 'Roles para admin, abogado, secretaría y cliente.',                         img: IMG('1556761175-b413da4baf72') },
 ]
 
 const TESTIMONIALS = [
@@ -34,6 +36,7 @@ const TESTIMONIALS = [
     text: 'Antes llevaba todo en Excel y cuadernos. Con DLEGAL organicé mis 40 casos activos en una tarde. La calculadora laboral me ahorra horas por semana.',
     stars: 5,
     initial: 'R',
+    photo: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&q=80&auto=format&fit=crop',
   },
   {
     name: 'Estudio Villalba & Asociados',
@@ -41,6 +44,7 @@ const TESTIMONIALS = [
     text: 'El módulo de cobranzas recuperó ₲ 12 millones en facturas vencidas en el primer mes. Los recordatorios automáticos por WhatsApp cambiaron todo.',
     stars: 5,
     initial: 'V',
+    photo: 'https://images.unsplash.com/photo-1568992687947-868a62a9f521?w=200&q=80&auto=format&fit=crop',
   },
   {
     name: 'Dra. Carolina Benítez',
@@ -48,6 +52,7 @@ const TESTIMONIALS = [
     text: 'La calculadora de liquidaciones del Ley 213/93 es perfecta. Antes tardaba 30 minutos haciendo cada cálculo, ahora son 30 segundos. Resultados exactos.',
     stars: 5,
     initial: 'C',
+    photo: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=200&q=80&auto=format&fit=crop',
   },
 ]
 
@@ -98,70 +103,58 @@ export default function LandingPage() {
       </header>
 
       <main>
-        {/* ───────────── Hero ───────────── */}
-        <section className="relative overflow-hidden bg-ink-950 pt-36 pb-28 text-white">
-          {/* Filigrana ñandutí — sello detrás del hero */}
-          <Nanduti
-            size={900}
-            spokes={28}
-            rings={7}
-            strokeWidth={0.35}
-            className="pointer-events-none absolute left-1/2 -top-[34rem] -translate-x-1/2 text-brass-400/[0.10] animate-spin-slow"
-          />
-          {/* halos radiales vino */}
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_55%_at_50%_-5%,rgba(147,48,42,0.26),transparent_60%)]" />
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(40%_40%_at_85%_30%,rgba(166,132,63,0.08),transparent_60%)]" />
+        {/* ───────────── Hero con video ───────────── */}
+        <section className="relative isolate flex min-h-[100dvh] items-end overflow-hidden pb-16 pt-36 text-white">
+          {/* Video de fondo (pasillo cálido) con imagen de respaldo */}
+          <video
+            autoPlay muted loop playsInline
+            poster="https://images.unsplash.com/photo-1505664194779-8beaceb93744?w=1600&q=80&auto=format&fit=crop"
+            className="absolute inset-0 -z-20 h-full w-full object-cover"
+          >
+            <source src="https://videos.pexels.com/video-files/7578548/7578548-hd_1920_1080_30fps.mp4" type="video/mp4" />
+          </video>
+          {/* Overlays para legibilidad y mood */}
+          <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink-950 via-ink-950/82 to-ink-950/55" />
+          <div className="absolute inset-0 -z-10 bg-[radial-gradient(75%_60%_at_12%_88%,rgba(147,48,42,0.38),transparent_60%)]" />
 
-          <div className="relative mx-auto max-w-6xl px-4">
-            <div className="mx-auto max-w-3xl text-center">
-              <span className="legal-tag inline-flex animate-fade-in items-center gap-2 rounded-sm bg-white/[0.06] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-brass-200 ring-1 ring-white/10">
+          <div className="relative mx-auto w-full max-w-6xl px-4">
+            <div className="max-w-2xl">
+              <span className="legal-tag inline-flex animate-fade-in items-center gap-2 rounded-sm bg-white/10 px-3 py-1.5 text-[10px] uppercase tracking-[0.22em] text-brass-200 ring-1 ring-white/20 backdrop-blur-sm">
                 <span className="h-1.5 w-1.5 rounded-full bg-brass-400" />
                 Software jurídico · Paraguay
               </span>
 
-              <h1 className="mt-7 animate-fade-up text-balance font-display text-5xl tracking-tight sm:text-6xl md:text-7xl">
-                El software legal más{' '}
-                <span className="italic text-brass-300">completo</span>{' '}
-                del Paraguay
+              <h1 className="mt-6 animate-fade-up text-balance font-display text-5xl leading-[1.03] text-white drop-shadow-[0_2px_24px_rgba(0,0,0,0.55)] sm:text-6xl md:text-7xl">
+                Tu estudio jurídico,<br />
+                <span className="italic text-brass-300">en orden.</span>
               </h1>
 
-              <p className="mx-auto mt-7 max-w-xl text-pretty text-lg leading-relaxed text-white/60">
-                25 módulos especializados para abogados y estudios jurídicos.
-                Calculadora Ley 213/93, facturación SET, LEXI IA y mucho más.
-                Precios fijos en guaraníes, sin dólares.
+              <p className="mt-6 max-w-xl text-pretty text-lg leading-relaxed text-white/85">
+                La plataforma más completa del Paraguay para abogados: casos, facturación SET,
+                calculadora Ley 213/93, firma electrónica y LEXI, tu asistente con inteligencia artificial.
               </p>
 
-              <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <a
-                  href="#planes"
-                  className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-brass-400 py-2 pl-7 pr-2 text-base font-semibold text-ink-950 shadow-gold-glow transition-all duration-300 ease-fluid hover:bg-brass-300 active:scale-[0.98] sm:w-auto"
-                >
+              <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <a href="#planes" className="group inline-flex items-center justify-center gap-2 rounded-full bg-brass-400 py-2 pl-7 pr-2 text-base font-semibold text-ink-950 shadow-gold-glow transition-all duration-300 ease-fluid hover:bg-brass-300 active:scale-[0.98]">
                   Comenzar 14 días gratis
                   <span className="grid h-9 w-9 place-items-center rounded-full bg-ink-950 text-brass-400 transition-transform duration-300 ease-fluid group-hover:translate-x-0.5">
                     <ArrowRight className="h-4 w-4" strokeWidth={1.8} />
                   </span>
                 </a>
-                <a
-                  href={`tel:${PHONE}`}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white/[0.06] px-7 py-3.5 text-base font-medium text-white ring-1 ring-white/15 transition-all duration-300 ease-fluid hover:bg-white/10 active:scale-[0.98] sm:w-auto"
-                >
+                <a href={`tel:${PHONE}`} className="inline-flex items-center justify-center gap-2 rounded-full bg-white/10 px-7 py-3.5 text-base font-medium text-white ring-1 ring-white/25 backdrop-blur-sm transition-all duration-300 ease-fluid hover:bg-white/20 active:scale-[0.98]">
                   <Phone className="h-4 w-4" strokeWidth={1.6} /> {PHONE}
                 </a>
               </div>
 
-              <p className="mt-6 text-sm text-white/35">
-                Sin tarjeta de crédito · Cancelá cuando quieras · Datos en Paraguay
-              </p>
-            </div>
-
-            {/* Stats bar */}
-            <div className="mx-auto mt-20 grid max-w-4xl grid-cols-2 gap-px overflow-hidden rounded-3xl bg-white/[0.06] ring-1 ring-white/10 md:grid-cols-4">
-              {STATS.map((s) => (
-                <div key={s.label} className="bg-ink-950/40 p-6 text-center backdrop-blur-sm">
-                  <p className="font-display text-3xl text-brass-400 tnum">{s.value}</p>
-                  <p className="mt-1.5 text-xs leading-snug text-white/45">{s.label}</p>
-                </div>
-              ))}
+              {/* Stats en línea */}
+              <div className="mt-12 flex flex-wrap gap-x-10 gap-y-4 border-t border-white/15 pt-7">
+                {STATS.map((s) => (
+                  <div key={s.label}>
+                    <p className="font-display text-3xl text-brass-300 tnum">{s.value}</p>
+                    <p className="mt-0.5 text-xs text-white/65">{s.label}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
@@ -186,48 +179,28 @@ export default function LandingPage() {
 
             <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {MODULES.map((m, i) => {
-                // primer módulo destacado, ocupa 2 columnas en lg
+                // primer módulo destacado, ocupa 2 columnas y 2 filas en lg
                 const featured = i === 0
                 return (
                   <article
                     key={m.label}
                     className={[
-                      'group relative flex flex-col justify-between overflow-hidden rounded-3xl p-6 ring-1 transition-all duration-500 ease-fluid hover:-translate-y-1',
-                      featured
-                        ? 'bg-ink-950 text-white ring-white/10 hover:shadow-tinted-lg sm:col-span-2 lg:row-span-2'
-                        : 'bg-white text-ink-900 ring-ink-900/[0.06] shadow-tinted hover:shadow-tinted-lg',
+                      'group relative isolate flex flex-col justify-end overflow-hidden rounded-3xl ring-1 ring-ink-900/10 shadow-tinted transition-all duration-500 ease-fluid hover:-translate-y-1 hover:shadow-tinted-lg',
+                      featured ? 'min-h-[24rem] sm:col-span-2 lg:row-span-2' : 'min-h-[14rem]',
                     ].join(' ')}
                   >
-                    {featured && (
-                      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_60%_at_80%_0%,rgba(147,48,42,0.16),transparent_60%)]" />
-                    )}
-                    <div className="relative">
-                      <span
-                        className={[
-                          'grid h-12 w-12 place-items-center rounded-2xl transition-colors duration-300',
-                          featured
-                            ? 'bg-gold-500/15 text-gold-400 ring-1 ring-gold-400/20'
-                            : 'bg-sand-100 text-ink-700 ring-1 ring-ink-900/[0.05] group-hover:bg-gold-500/10 group-hover:text-gold-600',
-                        ].join(' ')}
-                      >
-                        <m.icon className={featured ? 'h-6 w-6' : 'h-5 w-5'} strokeWidth={1.6} />
-                      </span>
-                    </div>
-                    <div className="relative mt-6">
-                      <h3
-                        className={[
-                          'font-display font-semibold tracking-tight',
-                          featured ? 'text-2xl' : 'text-lg',
-                        ].join(' ')}
-                      >
+                    <img
+                      src={m.img}
+                      alt={m.label}
+                      loading="lazy"
+                      className="absolute inset-0 -z-10 h-full w-full object-cover transition-transform duration-700 ease-fluid group-hover:scale-[1.06]"
+                    />
+                    <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink-950 via-ink-950/55 to-ink-950/10" />
+                    <div className="p-6">
+                      <h3 className={['font-display tracking-tight text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.5)]', featured ? 'text-3xl' : 'text-xl'].join(' ')}>
                         {m.label}
                       </h3>
-                      <p
-                        className={[
-                          'mt-2 text-pretty text-sm leading-relaxed',
-                          featured ? 'max-w-xs text-white/55' : 'text-ink-500',
-                        ].join(' ')}
-                      >
+                      <p className={['mt-2 text-pretty leading-relaxed text-white/80', featured ? 'max-w-sm text-base' : 'text-sm'].join(' ')}>
                         {m.desc}
                       </p>
                     </div>
@@ -271,9 +244,12 @@ export default function LandingPage() {
                     “{t.text}”
                   </blockquote>
                   <figcaption className="mt-7 flex items-center gap-3 border-t border-ink-900/[0.07] pt-6">
-                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-ink-900 font-display text-base font-semibold text-gold-400">
-                      {t.initial}
-                    </span>
+                    <img
+                      src={t.photo}
+                      alt={t.name}
+                      loading="lazy"
+                      className="h-12 w-12 shrink-0 rounded-full object-cover ring-1 ring-ink-900/10"
+                    />
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-semibold text-ink-900">{t.name}</span>
                       <span className="block truncate text-xs text-ink-400">{t.role}</span>

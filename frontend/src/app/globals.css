@@ -21,8 +21,11 @@
     text-rendering: optimizeLegibility;
     font-feature-settings: "ss01";
   }
+  /* Los títulos heredan el color del contexto (clave para fondos oscuros).
+     El color se fija por clase (text-ink-900 en claro, text-paper/white en oscuro). */
   h1, h2, h3, h4 {
-    @apply font-display text-ink-900;
+    @apply font-display;
+    color: inherit;
     letter-spacing: -0.015em;
     text-wrap: balance;
   }

@@ -6,6 +6,7 @@ import { Eye, EyeOff, Phone, MessageCircle, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { api } from '@/lib/api'
 import Logo from '@/components/Logo'
+import { validate, ruleRequired, isEmail, ruleRUCOptional } from '@/lib/validation'
 
 const PLANS: Record<string, { name: string; price: string; users: string }> = {
   solo:     { name: 'Solo',     price: '₲ 75.000/mes',  users: '1 usuario' },
@@ -26,14 +27,24 @@ function RegisterForm() {
   })
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [errors, setErrors] = useState<Record<string,string>>({})
+
+  const setField = (k: string, v: any) => {
+    setForm({ ...form, [k]: v })
+    if (errors[k]) setErrors(prev => { const n = { ...prev }; delete n[k]; return n })
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.firm_name || !form.admin_name || !form.email || !form.password) {
-      toast.error('Complete todos los campos obligatorios')
-      return
-    }
-    if (form.password.length < 8) { toast.error('La contraseña debe tener al menos 8 caracteres'); return }
+    const errs = validate({
+      firm_name: { value: form.firm_name, rules: [ruleRequired('El nombre del estudio es requerido')] },
+      admin_name: { value: form.admin_name, rules: [ruleRequired('Su nombre es requerido')] },
+      email: { value: form.email, rules: [ruleRequired('El email es requerido'), { test: (v: any) => isEmail(v), message: 'Email inválido' }] },
+      password: { value: form.password, rules: [ruleRequired('La contraseña es requerida'), { test: (v: any) => String(v).length >= 8, message: 'Mínimo 8 caracteres' }] },
+      ruc: { value: form.ruc, rules: [ruleRUCOptional()] },
+    })
+    if (Object.keys(errs).length) { setErrors(errs); toast.error('Revisá los campos marcados'); return }
+    setErrors({})
 
     setLoading(true)
     try {
@@ -47,6 +58,8 @@ function RegisterForm() {
 
   const plan = PLANS[form.plan] || PLANS.solo
   const inp = 'w-full px-3.5 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm text-ink-900 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition'
+  const inpErr = 'w-full px-3.5 py-2.5 bg-white ring-1 ring-rose-400 rounded-xl text-sm text-ink-900 placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-rose-400 transition'
+  const err = (f: string) => errors[f] ? inpErr : inp
   const lbl = 'block text-xs font-semibold text-ink-600 mb-1.5'
 
   return (
@@ -78,12 +91,14 @@ function RegisterForm() {
           <form onSubmit={submit} className="space-y-4">
             <div>
               <label className={lbl}>Nombre del estudio / bufete *</label>
-              <input className={inp} placeholder="Estudio Jurídico González & Asociados" value={form.firm_name} onChange={e => setForm({ ...form, firm_name: e.target.value })} />
+              <input className={err('firm_name')} placeholder="Estudio Jurídico González & Asociados" value={form.firm_name} onChange={e => setField('firm_name', e.target.value)} />
+              {errors.firm_name && <p className="mt-1 text-xs text-rose-600">{errors.firm_name}</p>}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={lbl}>Su nombre completo *</label>
-                <input className={inp} placeholder="Abog. Juan González" value={form.admin_name} onChange={e => setForm({ ...form, admin_name: e.target.value })} />
+                <input className={err('admin_name')} placeholder="Abog. Juan González" value={form.admin_name} onChange={e => setField('admin_name', e.target.value)} />
+                {errors.admin_name && <p className="mt-1 text-xs text-rose-600">{errors.admin_name}</p>}
               </div>
               <div>
                 <label className={lbl}>Ciudad</label>
@@ -92,7 +107,8 @@ function RegisterForm() {
             </div>
             <div>
               <label className={lbl}>Email *</label>
-              <input type="email" className={inp} placeholder="abogado@ejemplo.com.py" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+              <input type="email" className={err('email')} placeholder="abogado@ejemplo.com.py" value={form.email} onChange={e => setField('email', e.target.value)} />
+              {errors.email && <p className="mt-1 text-xs text-rose-600">{errors.email}</p>}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -101,17 +117,19 @@ function RegisterForm() {
               </div>
               <div>
                 <label className={lbl}>RUC (opcional)</label>
-                <input className={inp} placeholder="80123456-7" value={form.ruc} onChange={e => setForm({ ...form, ruc: e.target.value })} />
+                <input className={err('ruc')} placeholder="80123456-7" value={form.ruc} onChange={e => setField('ruc', e.target.value)} />
+                {errors.ruc && <p className="mt-1 text-xs text-rose-600">{errors.ruc}</p>}
               </div>
             </div>
             <div>
               <label className={lbl}>Contraseña *</label>
               <div className="relative">
-                <input type={showPass ? 'text' : 'password'} className={inp + ' pr-10'} placeholder="Mínimo 8 caracteres" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
+                <input type={showPass ? 'text' : 'password'} className={err('password') + ' pr-10'} placeholder="Mínimo 8 caracteres" value={form.password} onChange={e => setField('password', e.target.value)} />
                 <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-ink-300 hover:text-ink-600 transition">
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {errors.password && <p className="mt-1 text-xs text-rose-600">{errors.password}</p>}
             </div>
 
             <button type="submit" disabled={loading}

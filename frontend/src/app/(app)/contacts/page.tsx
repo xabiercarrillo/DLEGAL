@@ -5,6 +5,7 @@ import { contactsApi } from '@/lib/api'
 import { useState } from 'react'
 import { Contact2, Plus, X, Star, Phone, Mail, Search, Edit3, Trash2, MapPin, Briefcase } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { validate, ruleRequired, ruleEmailOptional, rulePhoneOptional } from '@/lib/validation'
 
 const TYPE_COLORS: Record<string,string> = {
   juez:'bg-gold-400/12 text-gold-700', secretario:'bg-ink-900/[0.05] text-ink-600',
@@ -28,6 +29,14 @@ export default function ContactsPage() {
   const [modal, setModal]     = useState<'create'|'edit'|null>(null)
   const [form, setForm]       = useState<any>({ ...EMPTY })
   const [selected, setSel]    = useState<any>(null)
+  const [errors, setErrors]   = useState<Record<string,string>>({})
+
+  const inpErr = 'w-full px-3 py-2.5 bg-white ring-1 ring-rose-400 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 transition'
+  const fieldCls = (f: string) => errors[f] ? inpErr : inp
+  const setField = (k: string, v: any) => {
+    setForm({ ...form, [k]: v })
+    if (errors[k]) setErrors(prev => { const n = { ...prev }; delete n[k]; return n })
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['contacts', search, typeF],
@@ -57,10 +66,16 @@ export default function ContactsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['contacts'] }),
   })
 
-  function openCreate() { setForm({ ...EMPTY }); setSel(null); setModal('create') }
-  function openEdit(c: any) { setForm({ ...c }); setSel(c); setModal('edit') }
+  function openCreate() { setForm({ ...EMPTY }); setSel(null); setErrors({}); setModal('create') }
+  function openEdit(c: any) { setForm({ ...c }); setSel(c); setErrors({}); setModal('edit') }
   function save() {
-    if (!form.full_name) return toast.error('Nombre requerido')
+    const errs = validate({
+      full_name: { value: form.full_name, rules: [ruleRequired('El nombre es requerido')] },
+      email: { value: form.email, rules: [ruleEmailOptional()] },
+      phone: { value: form.phone, rules: [rulePhoneOptional()] },
+    })
+    if (Object.keys(errs).length) { setErrors(errs); toast.error('Revisá los campos marcados'); return }
+    setErrors({})
     if (modal === 'create') createMut.mutate(form)
     else updateMut.mutate({ id: selected.id, d: form })
   }
@@ -168,7 +183,7 @@ export default function ContactsPage() {
               <button onClick={() => setModal(null)} className="p-2 rounded-xl hover:bg-white/10 text-white/60 transition"><X strokeWidth={1.7} className="w-4 h-4" /></button>
             </div>
             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-              <div><label className={lbl}>Nombre completo *</label><input className={inp} value={form.full_name||''} onChange={e=>setForm({...form,full_name:e.target.value})} placeholder="Dr. Roberto Díaz Alonso" /></div>
+              <div><label className={lbl}>Nombre completo *</label><input className={fieldCls('full_name')} value={form.full_name||''} onChange={e=>setField('full_name',e.target.value)} placeholder="Dr. Roberto Díaz Alonso" />{errors.full_name && <p className="mt-1 text-xs text-rose-600">{errors.full_name}</p>}</div>
               <div className="grid grid-cols-2 gap-3">
                 <div><label className={lbl}>Tipo de contacto</label>
                   <select className={inp} value={form.contact_type||'juez'} onChange={e=>setForm({...form,contact_type:e.target.value})}>
@@ -180,8 +195,8 @@ export default function ContactsPage() {
               <div><label className={lbl}>Institución / Juzgado</label><input className={inp} value={form.institution||''} onChange={e=>setForm({...form,institution:e.target.value})} placeholder="1er Juzgado Civil y Comercial" /></div>
               <div><label className={lbl}>Cargo</label><input className={inp} value={form.position||''} onChange={e=>setForm({...form,position:e.target.value})} placeholder="Juez de Primera Instancia" /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className={lbl}>Teléfono</label><input className={inp} value={form.phone||''} onChange={e=>setForm({...form,phone:e.target.value})} placeholder="0981 234 567" /></div>
-                <div><label className={lbl}>Email</label><input type="email" className={inp} value={form.email||''} onChange={e=>setForm({...form,email:e.target.value})} /></div>
+                <div><label className={lbl}>Teléfono</label><input className={fieldCls('phone')} value={form.phone||''} onChange={e=>setField('phone',e.target.value)} placeholder="0981 234 567" />{errors.phone && <p className="mt-1 text-xs text-rose-600">{errors.phone}</p>}</div>
+                <div><label className={lbl}>Email</label><input type="email" className={fieldCls('email')} value={form.email||''} onChange={e=>setField('email',e.target.value)} />{errors.email && <p className="mt-1 text-xs text-rose-600">{errors.email}</p>}</div>
               </div>
               <div><label className={lbl}>Notas</label><textarea rows={2} className={`${inp} resize-none`} value={form.notes||''} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="Sala 3, Palacio de Justicia, atiende lunes a viernes…" /></div>
             </div>

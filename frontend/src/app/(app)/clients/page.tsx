@@ -6,6 +6,7 @@ import { CASE_STATUS, MATTER, formatDate, formatPYG } from '@/lib/utils'
 import { useState } from 'react'
 import { Users, Plus, Phone, Mail, Building2, User, X, Search, ChevronRight, Briefcase, DollarSign, ExternalLink, MapPin } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { validate, ruleRequired, ruleEmailOptional, ruleCIOptional, ruleRUCOptional, rulePhoneOptional } from '@/lib/validation'
 
 const CLIENT_TYPE: Record<string,string> = { natural: 'Persona Natural', empresa: 'Empresa', gobierno: 'Gobierno', otro: 'Otro' }
 const EMPTY = { full_name: '', client_type: 'natural', email: '', phone: '', ruc: '', ci: '', city: 'Asuncion', address: '', notes: '' }
@@ -17,6 +18,12 @@ export default function ClientsPage() {
   const [form, setForm] = useState<any>({...EMPTY})
   const [selected, setSelected] = useState<any>(null)
   const [detailClient, setDetailClient] = useState<any>(null)
+  const [errors, setErrors] = useState<Record<string,string>>({})
+
+  const setField = (k: string, v: any) => {
+    setForm({ ...form, [k]: v })
+    if (errors[k]) setErrors(prev => { const n = { ...prev }; delete n[k]; return n })
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['clients', search],
@@ -41,12 +48,22 @@ export default function ClientsPage() {
   })
 
   const save = () => {
-    if (!form.full_name) return toast.error('Nombre requerido')
+    const errs = validate({
+      full_name: { value: form.full_name, rules: [ruleRequired('El nombre es requerido')] },
+      email: { value: form.email, rules: [ruleEmailOptional()] },
+      ci: { value: form.ci, rules: [ruleCIOptional()] },
+      ruc: { value: form.ruc, rules: [ruleRUCOptional()] },
+      phone: { value: form.phone, rules: [rulePhoneOptional()] },
+    })
+    if (Object.keys(errs).length) { setErrors(errs); toast.error('Revisá los campos marcados'); return }
+    setErrors({})
     if (modal === 'create') createMut.mutate(form)
     else if (selected) updateMut.mutate({ id: selected.id, d: form })
   }
 
   const inp = 'w-full px-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition'
+  const inpErr = 'w-full px-3 py-2.5 bg-white ring-1 ring-rose-400 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 transition'
+  const err = (f: string) => errors[f] ? inpErr : inp
   const lbl = 'block text-xs font-semibold text-ink-600 mb-1'
   const pending = createMut.isPending || updateMut.isPending
 
@@ -58,7 +75,7 @@ export default function ClientsPage() {
           <input placeholder="Buscar por nombre, email, CI, RUC..." value={search} onChange={e => setSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition" />
         </div>
-        <button onClick={() => { setSelected(null); setForm({...EMPTY}); setModal('create') }}
+        <button onClick={() => { setSelected(null); setForm({...EMPTY}); setErrors({}); setModal('create') }}
           className="flex items-center gap-2 bg-ink-900 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-ink-800 active:scale-[0.98] transition-all duration-300 ease-fluid">
           <Plus strokeWidth={1.7} className="w-4 h-4" /> Nuevo Cliente
         </button>
@@ -70,7 +87,7 @@ export default function ClientsPage() {
         <div className="bg-white rounded-3xl p-16 text-center ring-1 ring-ink-900/[0.06] shadow-tinted-sm">
           <Users strokeWidth={1.7} className="w-12 h-12 text-ink-200 mx-auto mb-3" />
           <p className="text-ink-400 font-medium">Sin clientes registrados</p>
-          <button onClick={() => { setSelected(null); setForm({...EMPTY}); setModal('create') }}
+          <button onClick={() => { setSelected(null); setForm({...EMPTY}); setErrors({}); setModal('create') }}
             className="mt-4 text-sm text-gold-700 hover:text-gold-800 hover:underline font-medium">+ Agregar primer cliente</button>
         </div>
       ) : (
@@ -111,17 +128,17 @@ export default function ClientsPage() {
               <button onClick={() => setModal(null)}><X strokeWidth={1.7} className="w-5 h-5 text-ink-400 hover:text-ink-600" /></button>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2"><label className={lbl}>Nombre / Razon Social *</label><input className={inp} value={form.full_name||''} onChange={e=>setForm({...form,full_name:e.target.value})} placeholder="Juan Gonzalez / ACME S.A."/></div>
+              <div className="col-span-2"><label className={lbl}>Nombre / Razon Social *</label><input className={err('full_name')} value={form.full_name||''} onChange={e=>setField('full_name',e.target.value)} placeholder="Juan Gonzalez / ACME S.A."/>{errors.full_name && <p className="mt-1 text-xs text-rose-600">{errors.full_name}</p>}</div>
               <div><label className={lbl}>Tipo</label>
                 <select className={inp} value={form.client_type||'natural'} onChange={e=>setForm({...form,client_type:e.target.value})}>
                   {Object.entries(CLIENT_TYPE).map(([k,v])=><option key={k} value={k}>{v}</option>)}
                 </select>
               </div>
               <div><label className={lbl}>Ciudad</label><input className={inp} value={form.city||''} onChange={e=>setForm({...form,city:e.target.value})} placeholder="Asuncion"/></div>
-              <div><label className={lbl}>CI</label><input className={inp} value={form.ci||''} onChange={e=>setForm({...form,ci:e.target.value})} placeholder="1234567"/></div>
-              <div><label className={lbl}>RUC</label><input className={inp} value={form.ruc||''} onChange={e=>setForm({...form,ruc:e.target.value})} placeholder="80123456-7"/></div>
-              <div><label className={lbl}>Email</label><input type="email" className={inp} value={form.email||''} onChange={e=>setForm({...form,email:e.target.value})} placeholder="cliente@email.com"/></div>
-              <div><label className={lbl}>Telefono</label><input className={inp} value={form.phone||''} onChange={e=>setForm({...form,phone:e.target.value})} placeholder="0981234567"/></div>
+              <div><label className={lbl}>CI</label><input className={err('ci')} value={form.ci||''} onChange={e=>setField('ci',e.target.value)} placeholder="1234567"/>{errors.ci && <p className="mt-1 text-xs text-rose-600">{errors.ci}</p>}</div>
+              <div><label className={lbl}>RUC</label><input className={err('ruc')} value={form.ruc||''} onChange={e=>setField('ruc',e.target.value)} placeholder="80123456-7"/>{errors.ruc && <p className="mt-1 text-xs text-rose-600">{errors.ruc}</p>}</div>
+              <div><label className={lbl}>Email</label><input type="email" className={err('email')} value={form.email||''} onChange={e=>setField('email',e.target.value)} placeholder="cliente@email.com"/>{errors.email && <p className="mt-1 text-xs text-rose-600">{errors.email}</p>}</div>
+              <div><label className={lbl}>Telefono</label><input className={err('phone')} value={form.phone||''} onChange={e=>setField('phone',e.target.value)} placeholder="0981234567"/>{errors.phone && <p className="mt-1 text-xs text-rose-600">{errors.phone}</p>}</div>
               <div className="col-span-2"><label className={lbl}>Direccion</label><input className={inp} value={form.address||''} onChange={e=>setForm({...form,address:e.target.value})} placeholder="Av. Mariscal Lopez 1234"/></div>
               <div className="col-span-2"><label className={lbl}>Notas internas</label><textarea rows={2} className={inp} value={form.notes||''} onChange={e=>setForm({...form,notes:e.target.value})} placeholder="Notas privadas..."/></div>
             </div>
@@ -160,7 +177,7 @@ export default function ClientsPage() {
                   )}
                 </div>
                 <div className="flex gap-2 flex-shrink-0">
-                  <button onClick={() => { setSelected(clientDetail || detailClient); setForm({...(clientDetail || detailClient)}); setModal('edit'); setDetailClient(null) }}
+                  <button onClick={() => { setSelected(clientDetail || detailClient); setForm({...(clientDetail || detailClient)}); setErrors({}); setModal('edit'); setDetailClient(null) }}
                     className="px-3 py-2 bg-white/20 hover:bg-white/30 rounded-full text-xs font-medium transition">Editar</button>
                   <button onClick={() => setDetailClient(null)} className="p-2 hover:bg-white/20 rounded-xl"><X strokeWidth={1.7} className="w-5 h-5" /></button>
                 </div>

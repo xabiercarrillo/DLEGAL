@@ -6,6 +6,7 @@ import { formatPYG, formatDate } from '@/lib/utils'
 import { useState } from 'react'
 import { Receipt, Plus, X, CheckCircle, FileText, ExternalLink, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { validate, ruleRequired, rulePositive } from '@/lib/validation'
 
 const EMPTY = { client_id: '', case_id: '', description: '', amount: '', vat_rate: 10, invoice_type: 'A', issue_date: new Date().toISOString().slice(0,10), due_date: '' }
 
@@ -25,6 +26,12 @@ export default function BillingPage() {
   const qc = useQueryClient()
   const [modal, setModal] = useState(false)
   const [form, setForm] = useState<any>({...EMPTY})
+  const [errors, setErrors] = useState<Record<string,string>>({})
+
+  const setField = (k: string, v: any) => {
+    setForm({ ...form, [k]: v })
+    if (errors[k]) setErrors(prev => { const n = { ...prev }; delete n[k]; return n })
+  }
   
   const { data, isLoading } = useQuery({ queryKey: ['invoices'], queryFn: () => billingApi.invoices.list({ limit: 50 }).then(r => r.data) })
   const { data: clientsData } = useQuery({ queryKey: ['clients-sel'], queryFn: () => clientsApi.list({ limit: 200 }).then(r => r.data) })
@@ -50,13 +57,20 @@ export default function BillingPage() {
   const net = amount - iva
 
   const save = () => {
-    if (!form.amount || !form.description) return toast.error('Completá los campos requeridos')
+    const errs = validate({
+      description: { value: form.description, rules: [ruleRequired('La descripción es requerida')] },
+      amount: { value: form.amount, rules: [rulePositive('El monto debe ser mayor a 0')] },
+    })
+    if (Object.keys(errs).length) { setErrors(errs); toast.error('Revisá los campos marcados'); return }
+    setErrors({})
     createMut.mutate({ ...form, amount: parseFloat(form.amount) })
   }
 
   const openPdf = (id: string) => window.open(billingApi.invoices.pdfUrl(id), '_blank')
 
   const inp = 'w-full px-3 py-2.5 bg-white ring-1 ring-ink-900/10 rounded-xl text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-gold-400/70 transition'
+  const inpErr = 'w-full px-3 py-2.5 bg-white ring-1 ring-rose-400 rounded-xl text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none focus:ring-2 focus:ring-rose-400 transition'
+  const err = (f: string) => errors[f] ? inpErr : inp
   const lbl = 'block text-[11px] font-semibold text-ink-500 mb-1.5 uppercase tracking-wider'
 
   const totalPending = items.filter(i => ['issued','emitida','enviada','sent','vencida','overdue'].includes(i.status)).reduce((s:number,i:any)=>s+(i.balance||i.amount||0),0)
@@ -81,7 +95,7 @@ export default function BillingPage() {
       </div>
 
       <div className="flex justify-end mb-4">
-        <button onClick={() => { setForm({...EMPTY}); setModal(true) }}
+        <button onClick={() => { setForm({...EMPTY}); setErrors({}); setModal(true) }}
           className="flex items-center gap-2 bg-ink-900 text-white px-4 py-2.5 rounded-full text-sm font-semibold hover:bg-ink-800 active:scale-[0.98] ease-fluid transition">
           <Plus className="w-4 h-4" strokeWidth={1.7} /> Nueva factura
         </button>
@@ -178,7 +192,8 @@ export default function BillingPage() {
             <div className="px-6 pb-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2"><label className={lbl}>Descripción *</label>
-                <input className={inp} value={form.description} onChange={e=>setForm({...form,description:e.target.value})} placeholder="Servicios profesionales — Caso XYZ"/>
+                <input className={err('description')} value={form.description} onChange={e=>setField('description',e.target.value)} placeholder="Servicios profesionales — Caso XYZ"/>
+                {errors.description && <p className="mt-1 text-xs text-rose-600">{errors.description}</p>}
               </div>
               <div><label className={lbl}>Cliente</label>
                 <select className={inp} value={form.client_id} onChange={e=>setForm({...form,client_id:e.target.value})}>
@@ -193,7 +208,8 @@ export default function BillingPage() {
                 </select>
               </div>
               <div><label className={lbl}>Monto total (₲) *</label>
-                <input type="number" className={inp} value={form.amount} onChange={e=>setForm({...form,amount:e.target.value})} placeholder="0"/>
+                <input type="number" min="0" className={err('amount')} value={form.amount} onChange={e=>setField('amount',e.target.value)} placeholder="0"/>
+                {errors.amount && <p className="mt-1 text-xs text-rose-600">{errors.amount}</p>}
               </div>
               <div><label className={lbl}>IVA %</label>
                 <select className={inp} value={form.vat_rate} onChange={e=>setForm({...form,vat_rate:+e.target.value})}>
