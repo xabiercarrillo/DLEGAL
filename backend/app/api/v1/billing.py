@@ -187,9 +187,19 @@ async def delete_income(income_id: str, db: AsyncSession = Depends(get_db), curr
 
 @router.get("/income/stats")
 async def income_stats(db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
-    result = await db.execute(select(func.sum(Income.amount)).where(Income.tenant_id == current_user.tenant_id))
-    total = result.scalar() or 0
-    return {"total_month": total, "total": total}
+    from datetime import datetime
+    now = datetime.utcnow()
+    month_start = datetime(now.year, now.month, 1)
+    res_m = await db.execute(
+        select(func.coalesce(func.sum(Income.amount), 0), func.count(Income.id))
+        .where(Income.tenant_id == current_user.tenant_id, Income.created_at >= month_start)
+    )
+    row_m = res_m.first()
+    total_month = row_m[0] or 0
+    count_month = row_m[1] or 0
+    res_t = await db.execute(select(func.sum(Income.amount)).where(Income.tenant_id == current_user.tenant_id))
+    total = res_t.scalar() or 0
+    return {"total_month": total_month, "count_month": count_month, "total": total}
 
 @router.post("/income", status_code=201)
 async def create_income(data: IncomeCreate, db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)):
